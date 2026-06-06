@@ -1,10 +1,12 @@
-import NextAuth from "next-auth";
-import { authConfig } from "@/lib/auth.config";
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 
-// Use the edge-safe config — nodemailer (Node.js-only) stays out of middleware.
-export const { auth: middleware } = NextAuth(authConfig);
+// Auth is enforced in app/(app)/layout.tsx — next-auth cannot run on the
+// Edge Runtime (jose uses DecompressionStream, a Node.js-only API).
+export function middleware(_request: NextRequest) {
+  return NextResponse.next();
+}
 
 export const config = {
-  // Protect all routes except login, auth callbacks, and static assets
-  matcher: ["/((?!login|api/auth|_next/static|_next/image|favicon.ico|manifest.json|icons).*)"],
+  matcher: [],
 };
