@@ -161,10 +161,11 @@ export default async function TodayPage() {
         <div className="space-y-3">
           {/* ── Arrivals today ─────────────────────────────────────────── */}
           <div className="bg-white rounded-2xl p-4 shadow-sm">
-            <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2 mb-3">
               <p className="text-sm font-semibold text-gray-800">
                 Arrivals today
               </p>
+              <div className="flex-1 h-px bg-blue-100" />
               {todayArrivals.length > 0 && (
                 <span className="text-xs font-semibold text-gray-700">
                   {todayArrivals.length}{" "}
@@ -211,9 +212,12 @@ export default async function TodayPage() {
 
           {/* ── Next movement ───────────────────────────────────────────── */}
           <div className="bg-white rounded-2xl p-4 shadow-sm">
-            <p className="text-sm font-semibold text-gray-800 mb-3">
-              Next movement
-            </p>
+            <div className="flex items-center gap-2 mb-3">
+              <p className="text-sm font-semibold text-gray-800">
+                Next movement
+              </p>
+              <div className="flex-1 h-px bg-blue-100" />
+            </div>
             {!currentEvent ? (
               <p className="text-gray-400 text-sm">No current event</p>
             ) : !nextMovement ? (
@@ -259,9 +263,12 @@ export default async function TodayPage() {
 
           {/* ── Hotels ─────────────────────────────────────────────────── */}
           <div className="bg-white rounded-2xl p-4 shadow-sm">
-            <p className="text-sm font-semibold text-gray-800 mb-3">
-              Hotels
-            </p>
+            <div className="flex items-center gap-2 mb-3">
+              <p className="text-sm font-semibold text-gray-800">
+                Hotels
+              </p>
+              <div className="flex-1 h-px bg-blue-100" />
+            </div>
             {!currentEvent ? (
               <p className="text-gray-400 text-sm">No current event</p>
             ) : hotels.length === 0 ? (
