@@ -1,0 +1,25 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --brand-navy: #0C2340;
+  --brand-red: #D92D27;
+  /* Safe area insets for iPhone notch / home bar */
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-top: env(safe-area-inset-top, 0px);
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  background: #f5f5f5;
+  overscroll-behavior: none;
+}
+
+/* Prevent content from going under the tab bar */
+.tab-content {
+  padding-bottom: calc(4rem + var(--safe-bottom));
+}

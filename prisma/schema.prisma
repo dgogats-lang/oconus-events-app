@@ -1,0 +1,279 @@
+// This is your Prisma schema file.
+// Learn more: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────────
+// Auth.js (NextAuth v5) required tables
+// ─────────────────────────────────────────────
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  role          Role      @default(STAFF)
+
+  accounts Account[]
+  sessions Session[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Account {
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([provider, providerAccountId])
+}
+
+model Session {
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime
+
+  @@id([identifier, token])
+}
+
+enum Role {
+  ADMIN
+  STAFF
+}
+
+// ─────────────────────────────────────────────
+// Core domain models
+// ─────────────────────────────────────────────
+
+// Top-level organizing unit (e.g., "HOH Europe Summits 2026")
+model Trip {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  startDate   DateTime
+  endDate     DateTime
+  isActive    Boolean  @default(true)
+
+  events    Event[]
+  attendees Attendee[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// A specific summit/stop within a Trip (e.g., "Munich Summit")
+model Event {
+  id       String   @id @default(cuid())
+  tripId   String
+  name     String
+  city     String
+  country  String
+  date     DateTime
+
+  trip                  Trip                    @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  hotels                Hotel[]
+  movements             Movement[]
+  hotelManifestEntries  HotelManifestEntry[]
+  arrivalDepartureRecords ArrivalDepartureRecord[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// Company / organization associated with attendees
+model Company {
+  id   String @id @default(cuid())
+  name String @unique
+
+  attendees Attendee[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// A person whose travel is managed for a Trip
+model Attendee {
+  id             String  @id @default(cuid())
+  tripId         String
+  companyId      String?
+  firstName      String
+  lastName       String
+  email          String
+  phone          String?
+  hasDodId       Boolean @default(false)
+  travelPackage  Boolean @default(false)
+  notes          String?
+
+  trip                    Trip                     @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  company                 Company?                 @relation(fields: [companyId], references: [id])
+  hotelManifestEntries    HotelManifestEntry[]
+  movementManifestEntries MovementManifestEntry[]
+  arrivalDepartureRecords ArrivalDepartureRecord[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tripId])
+  @@index([lastName])
+}
+
+// A hotel for a specific Event stop
+model Hotel {
+  id      String  @id @default(cuid())
+  eventId String
+  name    String
+  address String?
+  phone   String?
+  notes   String?
+
+  eventRel             Event                @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  hotelManifestEntries HotelManifestEntry[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([eventId])
+}
+
+// Links an Attendee to a Hotel for an Event stop
+model HotelManifestEntry {
+  id          String   @id @default(cuid())
+  eventId     String
+  attendeeId  String
+  hotelId     String
+  roomNumber  String?
+  checkIn     DateTime?
+  checkOut    DateTime?
+  notes       String?
+
+  event    Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  attendee Attendee @relation(fields: [attendeeId], references: [id], onDelete: Cascade)
+  hotel    Hotel    @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([eventId, attendeeId])
+  @@index([eventId])
+  @@index([attendeeId])
+}
+
+// Any ops-managed A→B transfer (bus, car, flight, or other)
+model Movement {
+  id          String         @id @default(cuid())
+  eventId     String
+  name        String         // e.g., "Bus 1 — Hotel to Airport"
+  mode        MovementMode
+  departureLocation String
+  arrivalLocation   String
+  departureTime     DateTime
+  arrivalTime       DateTime?
+  notes       String?
+
+  event                   Event                   @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  movementManifestEntries MovementManifestEntry[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([eventId])
+}
+
+enum MovementMode {
+  BUS
+  CAR
+  FLIGHT
+  TRAIN
+  OTHER
+}
+
+// An attendee on a specific Movement, with real-time check-in
+model MovementManifestEntry {
+  id         String              @id @default(cuid())
+  movementId String
+  attendeeId String
+  status     MovementEntryStatus @default(PENDING)
+  checkedInAt DateTime?
+  notes      String?
+
+  movement Movement @relation(fields: [movementId], references: [id], onDelete: Cascade)
+  attendee Attendee @relation(fields: [attendeeId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([movementId, attendeeId])
+  @@index([movementId])
+}
+
+enum MovementEntryStatus {
+  PENDING
+  CHECKED_IN
+  NO_SHOW
+}
+
+// Attendee's personal inbound/outbound flight (max 2 per attendee per trip)
+model ArrivalDepartureRecord {
+  id            String              @id @default(cuid())
+  attendeeId    String
+  eventId       String              // The event this arrival/departure is associated with
+  type          ArrivalDepartureType
+  airline       String?
+  flightNumber  String?
+  airport       String?
+  scheduledTime DateTime?
+  actualTime    DateTime?
+  status        FlightStatus        @default(SCHEDULED)
+  notes         String?
+
+  attendee Attendee @relation(fields: [attendeeId], references: [id], onDelete: Cascade)
+  event    Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([attendeeId])
+  @@index([eventId])
+  @@index([flightNumber])
+}
+
+enum ArrivalDepartureType {
+  ARRIVAL
+  DEPARTURE
+}
+
+enum FlightStatus {
+  SCHEDULED
+  ON_TIME
+  DELAYED
+  LANDED
+  CANCELLED
+}
