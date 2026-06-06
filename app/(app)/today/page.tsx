@@ -162,7 +162,7 @@ export default async function TodayPage() {
           {/* ── Arrivals today ─────────────────────────────────────────── */}
           <div className="bg-white rounded-2xl p-4 shadow-sm">
             <div className="flex items-center justify-between mb-3">
-              <p className="text-xs font-medium text-gray-400 uppercase tracking-wide">
+              <p className="text-sm font-semibold text-gray-800">
                 Arrivals today
               </p>
               {todayArrivals.length > 0 && (
@@ -211,7 +211,7 @@ export default async function TodayPage() {
 
           {/* ── Next movement ───────────────────────────────────────────── */}
           <div className="bg-white rounded-2xl p-4 shadow-sm">
-            <p className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-3">
+            <p className="text-sm font-semibold text-gray-800 mb-3">
               Next movement
             </p>
             {!currentEvent ? (
@@ -259,7 +259,7 @@ export default async function TodayPage() {
 
           {/* ── Hotels ─────────────────────────────────────────────────── */}
           <div className="bg-white rounded-2xl p-4 shadow-sm">
-            <p className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-3">
+            <p className="text-sm font-semibold text-gray-800 mb-3">
               Hotels
             </p>
             {!currentEvent ? (
