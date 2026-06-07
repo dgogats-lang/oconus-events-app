@@ -283,99 +283,105 @@ export default async function TodayPage() {
         <div className="space-y-3">
           {/* ── Arrivals card (visible while today ≤ last arrival date) ── */}
           {showArrivals && (
-            <Link href="/today/arrivals" className="block bg-white rounded-2xl p-4 shadow-sm active:bg-gray-50">
-              <div className="flex items-center gap-2 mb-3">
-                <p className="text-sm font-semibold text-gray-800">Arrivals</p>
-                <div className="flex-1 h-px bg-blue-100" />
-              </div>
-              {todayArrivals.length > 0 ? (
-                <div className="flex items-end justify-between">
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-4xl font-semibold text-gray-900">
+            <Link
+              href="/today/arrivals"
+              className="block rounded-2xl shadow-sm overflow-hidden active:opacity-90"
+            >
+              <div className="bg-[#0C2340] px-4 pt-3.5 pb-5">
+                {/* Label row */}
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="text-[10px] font-semibold text-blue-300 uppercase tracking-wider">
+                    Arrivals
+                  </span>
+                  <div className="flex-1" />
+                  <div className="flex items-center gap-1 text-[11px] text-blue-300">
+                    <span>View all</span>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="9 18 15 12 9 6" />
+                    </svg>
+                  </div>
+                </div>
+
+                {/* Count or next-date state */}
+                {todayArrivals.length > 0 ? (
+                  <div className="flex items-baseline gap-2.5">
+                    <span className="text-[42px] font-semibold text-white leading-none">
                       {todayArrivals.length}
                     </span>
-                    <span className="text-sm text-gray-400">
+                    <span className="text-sm text-blue-300">
                       {todayArrivals.length === 1 ? "arrival today" : "arrivals today"}
                     </span>
                   </div>
-                  <div className="flex items-center gap-1 text-xs text-gray-400">
-                    <span>View all</span>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                      <polyline points="9 18 15 12 9 6" />
-                    </svg>
-                  </div>
-                </div>
-              ) : nextArrivalDate ? (
-                <div className="flex items-center justify-between">
-                  <p className="text-sm text-gray-500">
-                    Next:{" "}
-                    <span className="font-medium text-gray-800">
-                      {nextArrivalDate.toLocaleDateString("en-US", {
-                        weekday: "short",
-                        month: "short",
-                        day: "numeric",
-                      })}
+                ) : nextArrivalDate ? (
+                  <div className="flex items-baseline gap-2.5">
+                    <span className="text-[42px] font-semibold text-white leading-none">0</span>
+                    <span className="text-sm text-blue-300">
+                      today · next{" "}
+                      <span className="text-white font-medium">
+                        {nextArrivalDate.toLocaleDateString("en-US", {
+                          weekday: "short",
+                          month: "short",
+                          day: "numeric",
+                        })}
+                      </span>
                     </span>
-                  </p>
-                  <div className="flex items-center gap-1 text-xs text-gray-400">
-                    <span>View all</span>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                      <polyline points="9 18 15 12 9 6" />
-                    </svg>
                   </div>
-                </div>
-              ) : (
-                <p className="text-gray-400 text-sm">No arrivals scheduled today</p>
-              )}
+                ) : (
+                  <p className="text-sm text-blue-300">No arrivals scheduled today</p>
+                )}
+              </div>
             </Link>
           )}
 
           {/* ── Departures card (visible once today ≥ first departure date) */}
           {showDepartures && (
-            <Link href="/today/departures" className="block bg-white rounded-2xl p-4 shadow-sm active:bg-gray-50">
-              <div className="flex items-center gap-2 mb-3">
-                <p className="text-sm font-semibold text-gray-800">Departures</p>
-                <div className="flex-1 h-px bg-blue-100" />
-              </div>
-              {todayDepartures.length > 0 ? (
-                <div className="flex items-end justify-between">
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-4xl font-semibold text-gray-900">
+            <Link
+              href="/today/departures"
+              className="block rounded-2xl shadow-sm overflow-hidden active:opacity-90"
+            >
+              <div className="bg-[#0C2340] px-4 pt-3.5 pb-5">
+                {/* Label row */}
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="text-[10px] font-semibold text-blue-300 uppercase tracking-wider">
+                    Departures
+                  </span>
+                  <div className="flex-1" />
+                  <div className="flex items-center gap-1 text-[11px] text-blue-300">
+                    <span>View all</span>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="9 18 15 12 9 6" />
+                    </svg>
+                  </div>
+                </div>
+
+                {/* Count or next-date state */}
+                {todayDepartures.length > 0 ? (
+                  <div className="flex items-baseline gap-2.5">
+                    <span className="text-[42px] font-semibold text-white leading-none">
                       {todayDepartures.length}
                     </span>
-                    <span className="text-sm text-gray-400">
+                    <span className="text-sm text-blue-300">
                       {todayDepartures.length === 1 ? "departure today" : "departures today"}
                     </span>
                   </div>
-                  <div className="flex items-center gap-1 text-xs text-gray-400">
-                    <span>View all</span>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                      <polyline points="9 18 15 12 9 6" />
-                    </svg>
-                  </div>
-                </div>
-              ) : nextDepartureDate ? (
-                <div className="flex items-center justify-between">
-                  <p className="text-sm text-gray-500">
-                    Next:{" "}
-                    <span className="font-medium text-gray-800">
-                      {nextDepartureDate.toLocaleDateString("en-US", {
-                        weekday: "short",
-                        month: "short",
-                        day: "numeric",
-                      })}
+                ) : nextDepartureDate ? (
+                  <div className="flex items-baseline gap-2.5">
+                    <span className="text-[42px] font-semibold text-white leading-none">0</span>
+                    <span className="text-sm text-blue-300">
+                      today · next{" "}
+                      <span className="text-white font-medium">
+                        {nextDepartureDate.toLocaleDateString("en-US", {
+                          weekday: "short",
+                          month: "short",
+                          day: "numeric",
+                        })}
+                      </span>
                     </span>
-                  </p>
-                  <div className="flex items-center gap-1 text-xs text-gray-400">
-                    <span>View all</span>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                      <polyline points="9 18 15 12 9 6" />
-                    </svg>
                   </div>
-                </div>
-              ) : (
-                <p className="text-gray-400 text-sm">No departures scheduled today</p>
-              )}
+                ) : (
+                  <p className="text-sm text-blue-300">No departures scheduled today</p>
+                )}
+              </div>
             </Link>
           )}
 
