@@ -52,6 +52,7 @@ const MODES: { value: MovementMode; label: string; icon: string }[] = [
   { value: "CAR",    label: "Car",      icon: "🚗" },
   { value: "FLIGHT", label: "Flight",   icon: "✈️" },
   { value: "TRAIN",  label: "Train",    icon: "🚆" },
+  { value: "WALK",   label: "Walk",     icon: "🚶" },
   { value: "OTHER",  label: "Other",    icon: "🚐" },
 ];
 
@@ -138,7 +139,7 @@ export default function MovementForm({
       <div className="flex items-center justify-between px-4 pt-4 pb-2">
         <Link
           href={backHref}
-          className="inline-flex items-center gap-1 text-sm font-medium text-[#0C2340]"
+          className="inline-flex items-center gap-1 text-sm font-medium text-[#0C2340] bg-[#E8EDF2] rounded-full px-3 py-1.5"
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="15 18 9 12 15 6" />
@@ -148,7 +149,7 @@ export default function MovementForm({
         <button
           type="submit"
           disabled={isPending}
-          className="text-sm font-semibold text-[#0C2340] disabled:opacity-40"
+          className="text-sm font-semibold text-[#0C2340] bg-[#E8EDF2] rounded-full px-3 py-1.5 disabled:opacity-40"
         >
           {isPending ? "Saving…" : "Save"}
         </button>

@@ -10,6 +10,7 @@ const MODE_ICON: Record<MovementMode, string> = {
   CAR:    "🚗",
   FLIGHT: "✈️",
   TRAIN:  "🚆",
+  WALK:   "🚶",
   OTHER:  "🚐",
 };
 
@@ -18,6 +19,7 @@ const MODE_LABEL: Record<MovementMode, string> = {
   CAR:    "Car",
   FLIGHT: "Flight",
   TRAIN:  "Train",
+  WALK:   "Walk",
   OTHER:  "Transfer",
 };
 

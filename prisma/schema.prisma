@@ -247,6 +247,7 @@ enum MovementMode {
   CAR
   FLIGHT
   TRAIN
+  WALK
   OTHER
 }
 

@@ -8,19 +8,21 @@ import NotesEditor from "./NotesEditor";
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
 const MODE_LABEL: Record<MovementMode, string> = {
-  BUS: "Bus",
-  CAR: "Car",
+  BUS:    "Bus",
+  CAR:    "Car",
   FLIGHT: "Flight",
-  TRAIN: "Train",
-  OTHER: "Transfer",
+  TRAIN:  "Train",
+  WALK:   "Walk",
+  OTHER:  "Transfer",
 };
 
 const MODE_ICON: Record<MovementMode, string> = {
-  BUS: "🚌",
-  CAR: "🚗",
+  BUS:    "🚌",
+  CAR:    "🚗",
   FLIGHT: "✈️",
-  TRAIN: "🚆",
-  OTHER: "🚐",
+  TRAIN:  "🚆",
+  WALK:   "🚶",
+  OTHER:  "🚐",
 };
 
 

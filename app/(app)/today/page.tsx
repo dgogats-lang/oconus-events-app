@@ -21,11 +21,12 @@ function localNow(timezone: string): Date {
 }
 
 const MODE_LABEL: Record<MovementMode, string> = {
-  BUS: "Bus",
-  CAR: "Car",
+  BUS:    "Bus",
+  CAR:    "Car",
   FLIGHT: "Flight",
-  TRAIN: "Train",
-  OTHER: "Transfer",
+  TRAIN:  "Train",
+  WALK:   "Walk",
+  OTHER:  "Transfer",
 };
 
 const STATUS_PILL: Record<FlightStatus, { label: string; className: string }> = {
@@ -50,6 +51,17 @@ function fmtDayTime(d: Date | null | undefined) {
     hour: "numeric",
     minute: "2-digit",
   });
+}
+
+function fmtDuration(dep: Date, arr: Date | null | undefined): string | null {
+  if (!arr) return null;
+  const mins = Math.round((arr.getTime() - dep.getTime()) / 60000);
+  if (mins <= 0) return null;
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  if (h === 0) return `${m}m`;
+  if (m === 0) return `${h}h`;
+  return `${h}h ${m}m`;
 }
 
 // ─── data fetching ───────────────────────────────────────────────────────────
@@ -388,13 +400,15 @@ export default async function TodayPage() {
                 <div className="flex-1 h-px bg-blue-100" />
               </div>
 
-              {/* Name + mode pill */}
-              <p className="text-sm font-semibold text-gray-800 mb-1">
-                {nextMovement.name}
-              </p>
-              <span className="inline-block text-[11px] font-medium px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 mb-3">
-                {MODE_LABEL[nextMovement.mode]}
-              </span>
+              {/* Name + mode pill on same line */}
+              <div className="flex items-center gap-2 mb-3 flex-wrap">
+                <p className="text-sm font-semibold text-gray-800">
+                  {nextMovement.name}
+                </p>
+                <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 shrink-0">
+                  {MODE_LABEL[nextMovement.mode]}
+                </span>
+              </div>
 
               {/* Route visual */}
               <div className="flex flex-col">
@@ -425,6 +439,14 @@ export default async function TodayPage() {
                     {fmtDayTime(nextMovement.departureTime)}
                   </p>
                 </div>
+                {fmtDuration(nextMovement.departureTime, nextMovement.arrivalTime) && (
+                  <div className="mx-auto text-center">
+                    <p className="text-[10px] text-gray-400 uppercase tracking-wide">Duration</p>
+                    <p className="text-sm font-medium text-gray-800">
+                      {fmtDuration(nextMovement.departureTime, nextMovement.arrivalTime)}
+                    </p>
+                  </div>
+                )}
                 <div className="ml-auto text-right">
                   <p className="text-[10px] text-gray-400 uppercase tracking-wide">Pax</p>
                   <p className="text-sm font-medium text-gray-800">
