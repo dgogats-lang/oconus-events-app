@@ -2,33 +2,16 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-
-// ─── helpers ──────────────────────────────────────────────────────────────────
-
-function fmtDate(d: Date | null | undefined) {
-  if (!d) return "—";
-  return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-}
-
-function initials(first: string, last: string) {
-  return `${first[0] ?? ""}${last[0] ?? ""}`.toUpperCase();
-}
+import HotelManifestClient from "./HotelManifestClient";
 
 // ─── data fetching ────────────────────────────────────────────────────────────
 
-async function getHotel(id: string) {
-  return db.hotel.findUnique({
+async function getHotelData(id: string) {
+  const hotel = await db.hotel.findUnique({
     where: { id },
     include: {
-      event: {
-        select: {
-          id: true,
-          name: true,
-          city: true,
-          date: true,
-          tripId: true,
-        },
-      },
+      event: { select: { id: true, name: true, city: true, tripId: true } },
+      trip:  { select: { id: true, name: true } },
       hotelManifestEntries: {
         orderBy: [
           { attendee: { lastName: "asc" } },
@@ -37,11 +20,8 @@ async function getHotel(id: string) {
         include: {
           attendee: {
             select: {
-              id: true,
-              firstName: true,
-              lastName: true,
-              email: true,
-              phone: true,
+              id: true, firstName: true, lastName: true,
+              email: true, phone: true,
               company: { select: { name: true } },
             },
           },
@@ -49,6 +29,78 @@ async function getHotel(id: string) {
       },
     },
   });
+  if (!hotel) return null;
+
+  const tripId = hotel.trip?.id ?? hotel.event?.tripId;
+  if (!tripId) return null;
+
+  const assignedIds = hotel.hotelManifestEntries.map((e) => e.attendeeId);
+
+  if (hotel.eventId) {
+    // Event hotel — assignable = attendees registered for this event, not already here
+    const [assignable, travelPackageRegistered] = await Promise.all([
+      db.attendee.findMany({
+        where: {
+          eventRegistrations: { some: { eventId: hotel.eventId } },
+          id: { notIn: assignedIds },
+        },
+        select: {
+          id: true, firstName: true, lastName: true,
+          email: true, phone: true,
+          company: { select: { name: true } },
+        },
+        orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
+      }),
+      // Coverage gap: travel package attendees registered for this event with no hotel at this event
+      db.attendee.findMany({
+        where: {
+          travelPackage: true,
+          eventRegistrations: { some: { eventId: hotel.eventId } },
+          hotelManifestEntries: {
+            none: { hotel: { eventId: hotel.eventId } },
+          },
+        },
+        select: {
+          id: true, firstName: true, lastName: true,
+          email: true, phone: true,
+          company: { select: { name: true } },
+        },
+        orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
+      }),
+    ]);
+    return { hotel, tripId, assignableAttendees: assignable, coverageGap: travelPackageRegistered };
+  } else {
+    // Transit hotel — assignable = all trip attendees not already here
+    const [assignable, travelPackageAll] = await Promise.all([
+      db.attendee.findMany({
+        where: {
+          tripId,
+          id: { notIn: assignedIds },
+        },
+        select: {
+          id: true, firstName: true, lastName: true,
+          email: true, phone: true,
+          company: { select: { name: true } },
+        },
+        orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
+      }),
+      // Coverage gap: all travel package attendees on trip with no assignment here
+      db.attendee.findMany({
+        where: {
+          tripId,
+          travelPackage: true,
+          id: { notIn: assignedIds },
+        },
+        select: {
+          id: true, firstName: true, lastName: true,
+          email: true, phone: true,
+          company: { select: { name: true } },
+        },
+        orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
+      }),
+    ]);
+    return { hotel, tripId, assignableAttendees: assignable, coverageGap: travelPackageAll };
+  }
 }
 
 // ─── page ─────────────────────────────────────────────────────────────────────
@@ -61,10 +113,10 @@ export default async function HotelDetailPage({
   await auth();
   const { id } = await params;
 
-  const hotel = await getHotel(id);
-  if (!hotel) notFound();
+  const data = await getHotelData(id);
+  if (!data) notFound();
 
-  const entries = hotel.hotelManifestEntries;
+  const { hotel } = data;
 
   return (
     <div className="pb-24">
@@ -96,11 +148,8 @@ export default async function HotelDetailPage({
         <p className="text-xs text-gray-400 mb-1">
           {hotel.event ? `${hotel.event.name} · ${hotel.event.city}` : "Transit"}
         </p>
-        <h1 className="text-xl font-bold text-gray-900 leading-snug">
-          {hotel.name}
-        </h1>
+        <h1 className="text-xl font-bold text-gray-900 leading-snug">{hotel.name}</h1>
 
-        {/* Contact info */}
         {(hotel.address || hotel.phone) && (
           <div className="mt-3 space-y-1.5">
             {hotel.address && (
@@ -113,10 +162,7 @@ export default async function HotelDetailPage({
               </div>
             )}
             {hotel.phone && (
-              <a
-                href={`tel:${hotel.phone}`}
-                className="flex items-center gap-2"
-              >
+              <a href={`tel:${hotel.phone}`} className="flex items-center gap-2">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-400 shrink-0">
                   <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.57 3.41 2 2 0 0 1 3.54 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.96a16 16 0 0 0 6.13 6.13l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z" />
                 </svg>
@@ -126,106 +172,20 @@ export default async function HotelDetailPage({
           </div>
         )}
 
-        {/* Notes */}
         {hotel.notes && (
           <div className="mt-3 bg-amber-50 rounded-xl px-3 py-2.5">
             <p className="text-xs text-amber-800 leading-relaxed">{hotel.notes}</p>
           </div>
         )}
-
-        {/* Guest count pill */}
-        <div className="mt-4 flex items-center gap-2">
-          <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-indigo-50 text-indigo-700">
-            {entries.length} {entries.length === 1 ? "guest" : "guests"}
-          </span>
-        </div>
       </div>
 
-      {/* Rooming list */}
-      <div className="px-4">
-        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
-          Rooming List
-        </p>
-
-        {entries.length === 0 ? (
-          <div className="bg-white rounded-2xl shadow-sm px-4 py-8 text-center">
-            <p className="text-gray-400 text-sm">No guests assigned yet.</p>
-          </div>
-        ) : (
-          <div className="bg-white rounded-2xl shadow-sm overflow-hidden divide-y divide-gray-50">
-            {entries.map((entry) => {
-              const { attendee } = entry;
-              const fullName = `${attendee.firstName} ${attendee.lastName}`;
-              const hasDateInfo = entry.checkIn || entry.checkOut;
-
-              return (
-                <Link
-                  key={entry.id}
-                  href={`/attendees/${attendee.id}`}
-                  className="flex items-center gap-3 px-4 py-3.5 hover:bg-gray-50 active:bg-gray-100"
-                >
-                  {/* Avatar */}
-                  <div className="w-9 h-9 rounded-full bg-[#0C2340] flex items-center justify-center shrink-0">
-                    <span className="text-xs font-semibold text-white">
-                      {initials(attendee.firstName, attendee.lastName)}
-                    </span>
-                  </div>
-
-                  {/* Name + company */}
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900 truncate">
-                      {fullName}
-                    </p>
-                    <p className="text-xs text-gray-400 truncate mt-0.5">
-                      {attendee.company?.name ?? ""}
-                      {attendee.company?.name && hasDateInfo ? " · " : ""}
-                      {hasDateInfo
-                        ? `${fmtDate(entry.checkIn)} – ${fmtDate(entry.checkOut)}`
-                        : ""}
-                    </p>
-                  </div>
-
-                  {/* Room number + chevron */}
-                  <div className="flex items-center gap-2 shrink-0">
-                    {entry.roomNumber ? (
-                      <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-gray-100 text-gray-700">
-                        Rm {entry.roomNumber}
-                      </span>
-                    ) : (
-                      <span className="text-xs text-gray-300">No room</span>
-                    )}
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#D1D5DB" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                      <polyline points="9 18 15 12 9 6" />
-                    </svg>
-                  </div>
-                </Link>
-              );
-            })}
-          </div>
-        )}
-      </div>
-
-      {/* Notes per entry (if any have notes) */}
-      {entries.some((e) => e.notes) && (
-        <div className="px-4 mt-6">
-          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
-            Room Notes
-          </p>
-          <div className="space-y-2">
-            {entries
-              .filter((e) => e.notes)
-              .map((entry) => (
-                <div key={entry.id} className="bg-white rounded-xl shadow-sm px-4 py-3">
-                  <p className="text-xs font-medium text-gray-700">
-                    {entry.attendee.firstName} {entry.attendee.lastName}
-                    {entry.roomNumber ? ` · Rm ${entry.roomNumber}` : ""}
-                  </p>
-                  <p className="text-xs text-gray-500 mt-1 leading-relaxed">{entry.notes}</p>
-                </div>
-              ))}
-          </div>
-        </div>
-      )}
+      {/* Rooming list (client) */}
+      <HotelManifestClient
+        hotelId={hotel.id}
+        entries={hotel.hotelManifestEntries}
+        assignableAttendees={data.assignableAttendees}
+        coverageGap={data.coverageGap}
+      />
     </div>
   );
 }
