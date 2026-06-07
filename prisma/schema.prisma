@@ -186,10 +186,11 @@ model Hotel {
   id      String  @id @default(cuid())
   eventId String? // null for transit hotels
   tripId  String? // set for transit hotels; also set for event hotels (denormalized for easy querying)
-  name    String
-  address String?
-  phone   String?
-  notes   String?
+  name          String
+  address       String?
+  googlePlaceId String?
+  phone         String?
+  notes         String?
 
   event                Event?               @relation(fields: [eventId], references: [id], onDelete: Cascade)
   trip                 Trip?                @relation(fields: [tripId], references: [id], onDelete: Cascade)

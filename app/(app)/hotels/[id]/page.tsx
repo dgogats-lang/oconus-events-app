@@ -158,7 +158,18 @@ export default async function HotelDetailPage({
                   <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
                   <circle cx="12" cy="10" r="3" />
                 </svg>
-                <p className="text-sm text-gray-600">{hotel.address}</p>
+                {hotel.googlePlaceId ? (
+                  <a
+                    href={`https://www.google.com/maps/place/?q=place_id:${hotel.googlePlaceId}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm text-blue-600"
+                  >
+                    {hotel.address}
+                  </a>
+                ) : (
+                  <p className="text-sm text-gray-600">{hotel.address}</p>
+                )}
               </div>
             )}
             {hotel.phone && (

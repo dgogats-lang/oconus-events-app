@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createHotel, updateHotel } from "@/actions/hotel";
@@ -16,6 +16,7 @@ interface InitialValues {
   tripId: string;
   name: string;
   address?: string | null;
+  googlePlaceId?: string | null;
   phone?: string | null;
   notes?: string | null;
 }
@@ -28,6 +29,13 @@ interface HotelFormProps {
   backHref: string;
 }
 
+declare global {
+  interface Window {
+    google: typeof google;
+    initGooglePlaces?: () => void;
+  }
+}
+
 export default function HotelForm({
   events,
   tripId,
@@ -38,17 +46,55 @@ export default function HotelForm({
   const router = useRouter();
   const isEdit = !!hotelId;
 
-  // "transit" is a sentinel value meaning no event (trip-level hotel)
-  const [eventId, setEventId] = useState(initialValues?.eventId ?? "transit");
-  const [name, setName]       = useState(initialValues?.name ?? "");
-  const [address, setAddress] = useState(initialValues?.address ?? "");
-  const [phone, setPhone]     = useState(initialValues?.phone ?? "");
-  const [notes, setNotes]     = useState(initialValues?.notes ?? "");
-  const [error, setError]     = useState<string | null>(null);
-  const [isPending, startTransition] = useTransition();
+  const [eventId, setEventId]           = useState(initialValues?.eventId ?? "transit");
+  const [name, setName]                 = useState(initialValues?.name ?? "");
+  const [address, setAddress]           = useState(initialValues?.address ?? "");
+  const [googlePlaceId, setGooglePlaceId] = useState(initialValues?.googlePlaceId ?? "");
+  const [phone, setPhone]               = useState(initialValues?.phone ?? "");
+  const [notes, setNotes]               = useState(initialValues?.notes ?? "");
+  const [error, setError]               = useState<string | null>(null);
+  const [isPending, startTransition]    = useTransition();
+
+  const addressRef = useRef<HTMLInputElement>(null);
+  const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
 
   const isTransit = eventId === "transit";
   const selectedEvent = events.find((e) => e.id === eventId);
+
+  // Initialise autocomplete once the Google script has loaded
+  useEffect(() => {
+    function initAutocomplete() {
+      if (!addressRef.current || !window.google?.maps?.places) return;
+      autocompleteRef.current = new window.google.maps.places.Autocomplete(
+        addressRef.current,
+        { types: ["establishment", "geocode"] }
+      );
+      autocompleteRef.current.addListener("place_changed", () => {
+        const place = autocompleteRef.current!.getPlace();
+        if (place.formatted_address) setAddress(place.formatted_address);
+        if (place.place_id) setGooglePlaceId(place.place_id);
+        // If the user picked a place with a name different from what they typed,
+        // and the hotel name field is still empty, pre-fill it
+        if (place.name && !name.trim()) setName(place.name);
+      });
+    }
+
+    // Script may already be loaded (e.g. navigating back to form)
+    if (window.google?.maps?.places) {
+      initAutocomplete();
+    } else {
+      // Callback invoked by the script's onload parameter
+      window.initGooglePlaces = initAutocomplete;
+    }
+
+    return () => {
+      // Clean up listener on unmount
+      if (autocompleteRef.current) {
+        window.google?.maps?.event?.clearInstanceListeners(autocompleteRef.current);
+      }
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -57,12 +103,13 @@ export default function HotelForm({
     setError(null);
 
     const payload = {
-      eventId: eventId === "transit" ? null : eventId,
+      eventId:       eventId === "transit" ? null : eventId,
       tripId,
-      name: name.trim(),
-      address: address.trim() || null,
-      phone: phone.trim() || null,
-      notes: notes.trim() || null,
+      name:          name.trim(),
+      address:       address.trim() || null,
+      googlePlaceId: googlePlaceId || null,
+      phone:         phone.trim() || null,
+      notes:         notes.trim() || null,
     };
 
     startTransition(async () => {
@@ -182,10 +229,16 @@ export default function HotelForm({
               </label>
               <input
                 id="hotel-address"
+                ref={addressRef}
                 type="text"
                 value={address}
-                onChange={(e) => setAddress(e.target.value)}
-                placeholder="Street address"
+                onChange={(e) => {
+                  setAddress(e.target.value);
+                  // If the user manually edits after picking a place, clear the stored place ID
+                  if (googlePlaceId) setGooglePlaceId("");
+                }}
+                placeholder="Search for hotel address…"
+                autoComplete="off"
                 className="flex-1 text-sm text-gray-900 text-right bg-transparent border-0 outline-none placeholder-gray-300 min-w-0"
               />
             </div>

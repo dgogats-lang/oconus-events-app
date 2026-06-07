@@ -5,10 +5,11 @@ import { db } from "@/lib/db";
 import { revalidatePath } from "next/cache";
 
 export async function createHotel(data: {
-  eventId?: string | null; // null for transit hotels
-  tripId: string;          // always required — denormalized for easy querying
+  eventId?: string | null;
+  tripId: string;
   name: string;
   address?: string | null;
+  googlePlaceId?: string | null;
   phone?: string | null;
   notes?: string | null;
 }): Promise<{ success: boolean; id?: string; error?: string }> {
@@ -18,12 +19,13 @@ export async function createHotel(data: {
   try {
     const hotel = await db.hotel.create({
       data: {
-        eventId: data.eventId || null,
-        tripId:  data.tripId,
-        name:    data.name.trim(),
-        address: data.address?.trim() || null,
-        phone:   data.phone?.trim() || null,
-        notes:   data.notes?.trim() || null,
+        eventId:       data.eventId || null,
+        tripId:        data.tripId,
+        name:          data.name.trim(),
+        address:       data.address?.trim() || null,
+        googlePlaceId: data.googlePlaceId || null,
+        phone:         data.phone?.trim() || null,
+        notes:         data.notes?.trim() || null,
       },
     });
     revalidatePath("/hotels");
@@ -40,6 +42,7 @@ export async function updateHotel(
     tripId: string;
     name: string;
     address?: string | null;
+    googlePlaceId?: string | null;
     phone?: string | null;
     notes?: string | null;
   }
@@ -51,12 +54,13 @@ export async function updateHotel(
     await db.hotel.update({
       where: { id },
       data: {
-        eventId: data.eventId || null,
-        tripId:  data.tripId,
-        name:    data.name.trim(),
-        address: data.address?.trim() || null,
-        phone:   data.phone?.trim() || null,
-        notes:   data.notes?.trim() || null,
+        eventId:       data.eventId || null,
+        tripId:        data.tripId,
+        name:          data.name.trim(),
+        address:       data.address?.trim() || null,
+        googlePlaceId: data.googlePlaceId || null,
+        phone:         data.phone?.trim() || null,
+        notes:         data.notes?.trim() || null,
       },
     });
     revalidatePath("/hotels");

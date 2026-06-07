@@ -1,16 +1,16 @@
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { notFound } from "next/navigation";
+import Script from "next/script";
 import HotelForm from "../../HotelForm";
 
 async function getHotelAndEvents(id: string) {
   const hotel = await db.hotel.findUnique({
     where: { id },
-    select: { id: true, eventId: true, tripId: true, name: true, address: true, phone: true, notes: true },
+    select: { id: true, eventId: true, tripId: true, name: true, address: true, googlePlaceId: true, phone: true, notes: true },
   });
   if (!hotel) return null;
 
-  // Resolve tripId — may be on the hotel directly, or via its event
   const tripId = hotel.tripId ?? (
     hotel.eventId
       ? (await db.event.findUnique({ where: { id: hotel.eventId }, select: { tripId: true } }))?.tripId
@@ -38,19 +38,26 @@ export default async function EditHotelPage({
   if (!data) notFound();
 
   return (
-    <HotelForm
-      events={data.events}
-      tripId={data.tripId}
-      hotelId={id}
-      initialValues={{
-        eventId: data.hotel.eventId,
-        tripId: data.tripId,
-        name: data.hotel.name,
-        address: data.hotel.address,
-        phone: data.hotel.phone,
-        notes: data.hotel.notes,
-      }}
-      backHref={`/hotels/${id}`}
-    />
+    <>
+      <Script
+        src={`https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&libraries=places&callback=initGooglePlaces`}
+        strategy="afterInteractive"
+      />
+      <HotelForm
+        events={data.events}
+        tripId={data.tripId}
+        hotelId={id}
+        initialValues={{
+          eventId:       data.hotel.eventId,
+          tripId:        data.tripId,
+          name:          data.hotel.name,
+          address:       data.hotel.address,
+          googlePlaceId: data.hotel.googlePlaceId,
+          phone:         data.hotel.phone,
+          notes:         data.hotel.notes,
+        }}
+        backHref={`/hotels/${id}`}
+      />
+    </>
   );
 }
