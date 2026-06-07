@@ -48,6 +48,18 @@ function ContactSheet({
   onClose: () => void;
 }) {
   const hotel = attendee.hotelManifestEntries[0] ?? null;
+  const swipeStartY = useRef<number | null>(null);
+
+  function handleSheetTouchStart(e: React.TouchEvent) {
+    swipeStartY.current = e.touches[0].clientY;
+  }
+
+  function handleSheetTouchEnd(e: React.TouchEvent) {
+    if (swipeStartY.current === null) return;
+    const dy = e.changedTouches[0].clientY - swipeStartY.current;
+    if (dy > 80) onClose();
+    swipeStartY.current = null;
+  }
 
   return (
     <>
@@ -58,7 +70,12 @@ function ContactSheet({
       />
 
       {/* Sheet */}
-      <div className="fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-2xl shadow-xl pb-10">
+      <div
+        className="fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-2xl shadow-xl pb-10"
+        onTouchStart={handleSheetTouchStart}
+        onTouchEnd={handleSheetTouchEnd}
+        style={{ touchAction: "pan-y" }}
+      >
         {/* Handle */}
         <div className="flex justify-center pt-3 pb-1">
           <div className="w-10 h-1 rounded-full bg-gray-200" />
@@ -201,6 +218,7 @@ function ManifestRow({
       className="flex items-center gap-3 px-4 py-3.5 divide-x-0"
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
+      style={{ touchAction: "pan-y" }}
     >
       {/* Check-in toggle — ONLY tap target for status */}
       <button
