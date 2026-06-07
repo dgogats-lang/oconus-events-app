@@ -54,7 +54,7 @@ export default async function HotelsPage() {
   return (
     <div className="pb-24">
       <div className="px-4 pt-6 pb-2">
-        <div className="flex items-center gap-2 mb-0.5">
+        <div className="flex items-center justify-between gap-2 mb-0.5">
           <Link
             href="/more"
             className="inline-flex items-center gap-1 text-sm font-medium text-[#0C2340] bg-[#E8EDF2] rounded-full px-3 py-1.5"
@@ -63,6 +63,16 @@ export default async function HotelsPage() {
               <polyline points="15 18 9 12 15 6" />
             </svg>
             More
+          </Link>
+          <Link
+            href="/hotels/new"
+            className="inline-flex items-center gap-1.5 text-sm font-medium text-[#0C2340] bg-[#E8EDF2] rounded-full px-3 py-1.5"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="12" y1="5" x2="12" y2="19" />
+              <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+            Add
           </Link>
         </div>
         <h1 className="text-xl font-semibold text-gray-900 mt-3">Hotels</h1>
