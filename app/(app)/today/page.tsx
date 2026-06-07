@@ -503,53 +503,55 @@ export default async function TodayPage() {
           )}
 
           {/* ── Hotels ─────────────────────────────────────────────────── */}
-          <div className="bg-white rounded-2xl p-4 shadow-sm">
-            <div className="flex items-center gap-2 mb-3">
-              <p className="text-sm font-semibold text-gray-800">Hotels</p>
-              <div className="flex-1 h-px bg-blue-100" />
-              <Link href="/hotels" className="text-xs text-[#0C2340] font-medium flex items-center gap-0.5">
-                View all
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="9 18 15 12 9 6" />
-                </svg>
-              </Link>
+          <div className="rounded-2xl shadow-sm overflow-hidden">
+            {/* Dark header */}
+            <div className="bg-[#0C2340] px-4 pt-3.5 pb-3">
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-semibold text-blue-300 uppercase tracking-wider">
+                  Hotels
+                </span>
+                <div className="flex-1" />
+                <Link href="/hotels" className="flex items-center gap-1 text-[11px] text-blue-300">
+                  <span>View all</span>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="9 18 15 12 9 6" />
+                  </svg>
+                </Link>
+              </div>
             </div>
-            {!currentEvent ? (
-              <p className="text-gray-400 text-sm">No current event</p>
-            ) : hotels.length === 0 ? (
-              <p className="text-gray-400 text-sm">No hotels assigned yet</p>
-            ) : (
-              <ul className="divide-y divide-gray-50">
-                {hotels.map((hotel) => (
-                  <li key={hotel.id} className="py-2 first:pt-0 last:pb-0">
-                    <Link
-                      href={`/hotels/${hotel.id}`}
-                      className="flex items-center justify-between gap-2 active:opacity-70"
-                    >
-                      <div className="min-w-0">
+
+            {/* White lower section */}
+            <div className="bg-white px-4 pt-2 pb-3">
+              {!currentEvent ? (
+                <p className="text-gray-400 text-sm py-2">No current event</p>
+              ) : hotels.length === 0 ? (
+                <p className="text-gray-400 text-sm py-2">No hotels assigned yet</p>
+              ) : (
+                <ul className="divide-y divide-gray-50">
+                  {hotels.map((hotel) => (
+                    <li key={hotel.id} className="py-2 first:pt-2 last:pb-0">
+                      <Link
+                        href={`/hotels/${hotel.id}`}
+                        className="flex items-center justify-between gap-2 active:opacity-70"
+                      >
                         <p className="text-sm font-medium text-gray-800 truncate">
                           {hotel.name}
                         </p>
-                        {hotel.address && (
-                          <p className="text-xs text-gray-400 truncate">
-                            {hotel.address}
-                          </p>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-1.5 shrink-0">
-                        <span className="text-xs text-gray-500">
-                          {hotel._count.hotelManifestEntries}{" "}
-                          {hotel._count.hotelManifestEntries === 1 ? "guest" : "guests"}
-                        </span>
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#D1D5DB" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                          <polyline points="9 18 15 12 9 6" />
-                        </svg>
-                      </div>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            )}
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          <span className="text-xs text-gray-500">
+                            {hotel._count.hotelManifestEntries}{" "}
+                            {hotel._count.hotelManifestEntries === 1 ? "guest" : "guests"}
+                          </span>
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#D1D5DB" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="9 18 15 12 9 6" />
+                          </svg>
+                        </div>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
           </div>
         </div>
       )}
