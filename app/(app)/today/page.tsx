@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { MovementMode, FlightStatus, ArrivalDepartureType } from "@prisma/client";
+import Link from "next/link";
+import { MovementMode, FlightStatus } from "@prisma/client";
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -70,17 +71,23 @@ async function getTodayData() {
     trip.events[trip.events.length - 1] ??   // most recent past
     null;
 
-  // 3. Today's arrivals for the active trip
-  const todayArrivals = await db.arrivalDepartureRecord.findMany({
+  // 3. Today's arrivals for the active trip (flat fields on Attendee)
+  const todayArrivals = await db.attendee.findMany({
     where: {
-      type: ArrivalDepartureType.ARRIVAL,
-      attendee: { tripId: trip.id },
-      scheduledTime: { gte: todayStart, lte: todayEnd },
+      tripId: trip.id,
+      arrivalScheduledAt: { gte: todayStart, lte: todayEnd },
     },
-    include: {
-      attendee: { select: { firstName: true, lastName: true } },
+    select: {
+      id: true,
+      firstName: true,
+      lastName: true,
+      arrivalAirline: true,
+      arrivalFlightNumber: true,
+      arrivalAirport: true,
+      arrivalScheduledAt: true,
+      arrivalStatus: true,
     },
-    orderBy: { scheduledTime: "asc" },
+    orderBy: { arrivalScheduledAt: "asc" },
   });
 
   // 4. Next movement for current event
@@ -160,55 +167,32 @@ export default async function TodayPage() {
       ) : (
         <div className="space-y-3">
           {/* ── Arrivals today ─────────────────────────────────────────── */}
-          <div className="bg-white rounded-2xl p-4 shadow-sm">
+          <Link href="/today/arrivals" className="block bg-white rounded-2xl p-4 shadow-sm active:bg-gray-50">
             <div className="flex items-center gap-2 mb-3">
-              <p className="text-sm font-semibold text-gray-800">
-                Arrivals today
-              </p>
+              <p className="text-sm font-semibold text-gray-800">Arrivals today</p>
               <div className="flex-1 h-px bg-blue-100" />
-              {todayArrivals.length > 0 && (
-                <span className="text-xs font-semibold text-gray-700">
-                  {todayArrivals.length}{" "}
-                  {todayArrivals.length === 1 ? "arrival" : "arrivals"}
-                </span>
-              )}
             </div>
-
             {todayArrivals.length === 0 ? (
               <p className="text-gray-400 text-sm">No arrivals scheduled today</p>
             ) : (
-              <ul className="divide-y divide-gray-50">
-                {todayArrivals.map((rec) => {
-                  const pill = STATUS_PILL[rec.status];
-                  return (
-                    <li key={rec.id} className="py-2 first:pt-0 last:pb-0">
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="min-w-0">
-                          <p className="text-sm font-medium text-gray-800 truncate">
-                            {rec.attendee.firstName} {rec.attendee.lastName}
-                          </p>
-                          <p className="text-xs text-gray-400">
-                            {[rec.airline, rec.flightNumber]
-                              .filter(Boolean)
-                              .join(" ")}
-                            {rec.airport ? ` · ${rec.airport}` : ""}
-                            {rec.scheduledTime
-                              ? ` · ${fmtTime(rec.scheduledTime)}`
-                              : ""}
-                          </p>
-                        </div>
-                        <span
-                          className={`shrink-0 text-[10px] font-medium px-2 py-0.5 rounded-full ${pill.className}`}
-                        >
-                          {pill.label}
-                        </span>
-                      </div>
-                    </li>
-                  );
-                })}
-              </ul>
+              <div className="flex items-end justify-between">
+                <div className="flex items-baseline gap-2">
+                  <span className="text-4xl font-semibold text-gray-900">
+                    {todayArrivals.length}
+                  </span>
+                  <span className="text-sm text-gray-400">
+                    {todayArrivals.length === 1 ? "arrival" : "arrivals"}
+                  </span>
+                </div>
+                <div className="flex items-center gap-1 text-xs text-gray-400">
+                  <span>View all</span>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="9 18 15 12 9 6" />
+                  </svg>
+                </div>
+              </div>
             )}
-          </div>
+          </Link>
 
           {/* ── Next movement ───────────────────────────────────────────── */}
           <div className="bg-white rounded-2xl p-4 shadow-sm">

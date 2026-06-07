@@ -7,8 +7,8 @@ generator client {
 
 datasource db {
   provider  = "postgresql"
-  url       = env("DATABASE_URL")
   directUrl = env("DATABASE_URL")
+  url       = env("DATABASE_URL")
 }
 
 // ─────────────────────────────────────────────
@@ -74,6 +74,7 @@ enum Role {
 // ─────────────────────────────────────────────
 
 // Top-level organizing unit (e.g., "HOH Europe Summits 2026")
+// Added by this app — Quickbase uses a separate template app per trip instead.
 model Trip {
   id          String   @id @default(cuid())
   name        String
@@ -98,11 +99,11 @@ model Event {
   country  String
   date     DateTime
 
-  trip                  Trip                    @relation(fields: [tripId], references: [id], onDelete: Cascade)
-  hotels                Hotel[]
-  movements             Movement[]
-  hotelManifestEntries  HotelManifestEntry[]
-  arrivalDepartureRecords ArrivalDepartureRecord[]
+  trip                 Trip                 @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  eventRegistrations   EventRegistration[]
+  hotels               Hotel[]
+  movements            Movement[]
+  hotelManifestEntries HotelManifestEntry[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -121,28 +122,61 @@ model Company {
 
 // A person whose travel is managed for a Trip
 model Attendee {
-  id             String  @id @default(cuid())
-  tripId         String
-  companyId      String?
-  firstName      String
-  lastName       String
-  email          String
-  phone          String?
-  hasDodId       Boolean @default(false)
-  travelPackage  Boolean @default(false)
-  notes          String?
+  id            String  @id @default(cuid())
+  tripId        String
+  companyId     String?
+  firstName     String
+  lastName      String
+  email         String
+  phone         String?
+  hasDodId      Boolean @default(false)
+  travelPackage Boolean @default(false)
+  notes         String?
 
-  trip                    Trip                     @relation(fields: [tripId], references: [id], onDelete: Cascade)
-  company                 Company?                 @relation(fields: [companyId], references: [id])
+  // Personal arrival flight (trip-level — one per attendee)
+  arrivalAirline      String?
+  arrivalFlightNumber String?
+  arrivalAirport      String?
+  arrivalScheduledAt  DateTime?
+  arrivalActualAt     DateTime?
+  arrivalStatus       FlightStatus @default(SCHEDULED)
+
+  // Personal departure flight (trip-level — one per attendee)
+  departureAirline      String?
+  departureFlightNumber String?
+  departureAirport      String?
+  departureScheduledAt  DateTime?
+  departureActualAt     DateTime?
+  departureStatus       FlightStatus @default(SCHEDULED)
+
+  trip                    Trip                    @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  company                 Company?                @relation(fields: [companyId], references: [id])
+  eventRegistrations      EventRegistration[]
   hotelManifestEntries    HotelManifestEntry[]
   movementManifestEntries MovementManifestEntry[]
-  arrivalDepartureRecords ArrivalDepartureRecord[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([tripId])
   @@index([lastName])
+}
+
+// Explicit registration of an Attendee at an Event (mirrors Quickbase Event Registrations)
+model EventRegistration {
+  id         String @id @default(cuid())
+  attendeeId String
+  eventId    String
+
+  attendee Attendee @relation(fields: [attendeeId], references: [id], onDelete: Cascade)
+  event    Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([attendeeId, eventId])
+  @@index([attendeeId])
+  @@index([eventId])
 }
 
 // A hotel for a specific Event stop
@@ -154,7 +188,7 @@ model Hotel {
   phone   String?
   notes   String?
 
-  eventRel             Event                @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  event                Event                @relation(fields: [eventId], references: [id], onDelete: Cascade)
   hotelManifestEntries HotelManifestEntry[]
 
   createdAt DateTime @default(now())
@@ -165,14 +199,14 @@ model Hotel {
 
 // Links an Attendee to a Hotel for an Event stop
 model HotelManifestEntry {
-  id          String   @id @default(cuid())
-  eventId     String
-  attendeeId  String
-  hotelId     String
-  roomNumber  String?
-  checkIn     DateTime?
-  checkOut    DateTime?
-  notes       String?
+  id         String    @id @default(cuid())
+  eventId    String
+  attendeeId String
+  hotelId    String
+  roomNumber String?
+  checkIn    DateTime?
+  checkOut   DateTime?
+  notes      String?
 
   event    Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
   attendee Attendee @relation(fields: [attendeeId], references: [id], onDelete: Cascade)
@@ -188,15 +222,15 @@ model HotelManifestEntry {
 
 // Any ops-managed A→B transfer (bus, car, flight, or other)
 model Movement {
-  id          String         @id @default(cuid())
-  eventId     String
-  name        String         // e.g., "Bus 1 — Hotel to Airport"
-  mode        MovementMode
+  id                String       @id @default(cuid())
+  eventId           String
+  name              String       // e.g., "Bus 1 — Hotel to Airport"
+  mode              MovementMode
   departureLocation String
   arrivalLocation   String
   departureTime     DateTime
   arrivalTime       DateTime?
-  notes       String?
+  notes             String?
 
   event                   Event                   @relation(fields: [eventId], references: [id], onDelete: Cascade)
   movementManifestEntries MovementManifestEntry[]
@@ -217,12 +251,12 @@ enum MovementMode {
 
 // An attendee on a specific Movement, with real-time check-in
 model MovementManifestEntry {
-  id         String              @id @default(cuid())
-  movementId String
-  attendeeId String
-  status     MovementEntryStatus @default(PENDING)
+  id          String              @id @default(cuid())
+  movementId  String
+  attendeeId  String
+  status      MovementEntryStatus @default(PENDING)
   checkedInAt DateTime?
-  notes      String?
+  notes       String?
 
   movement Movement @relation(fields: [movementId], references: [id], onDelete: Cascade)
   attendee Attendee @relation(fields: [attendeeId], references: [id], onDelete: Cascade)
@@ -238,36 +272,6 @@ enum MovementEntryStatus {
   PENDING
   CHECKED_IN
   NO_SHOW
-}
-
-// Attendee's personal inbound/outbound flight (max 2 per attendee per trip)
-model ArrivalDepartureRecord {
-  id            String              @id @default(cuid())
-  attendeeId    String
-  eventId       String              // The event this arrival/departure is associated with
-  type          ArrivalDepartureType
-  airline       String?
-  flightNumber  String?
-  airport       String?
-  scheduledTime DateTime?
-  actualTime    DateTime?
-  status        FlightStatus        @default(SCHEDULED)
-  notes         String?
-
-  attendee Attendee @relation(fields: [attendeeId], references: [id], onDelete: Cascade)
-  event    Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([attendeeId])
-  @@index([eventId])
-  @@index([flightNumber])
-}
-
-enum ArrivalDepartureType {
-  ARRIVAL
-  DEPARTURE
 }
 
 enum FlightStatus {

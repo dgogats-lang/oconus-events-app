@@ -1,26 +1,184 @@
-// TODO: Fetch attendees from db, wire up search
+import { auth } from "@/lib/auth";
+import { db } from "@/lib/db";
+import Link from "next/link";
+import AttendeeSearch from "./AttendeeSearch";
 
-export default function AttendeesPage() {
+// ─── data fetching ────────────────────────────────────────────────────────────
+
+async function getAttendeesData(
+  search: string,
+  filter: string,
+  eventId: string
+) {
+  const trip = await db.trip.findFirst({
+    where: { isActive: true },
+    include: { events: { orderBy: { date: "asc" } } },
+  });
+
+  if (!trip) return { trip: null, currentEvent: null, events: [], attendees: [] };
+
+  // Current event: prefer today, else next upcoming, else most recent past
+  const now = new Date();
+  const todayStr = now.toDateString();
+  const currentEvent =
+    trip.events.find((e) => new Date(e.date).toDateString() === todayStr) ??
+    trip.events.find((e) => e.date > now) ??
+    trip.events[trip.events.length - 1] ??
+    null;
+
+  const attendees = await db.attendee.findMany({
+    where: {
+      tripId: trip.id,
+      ...(search
+        ? {
+            OR: [
+              { firstName: { contains: search, mode: "insensitive" } },
+              { lastName: { contains: search, mode: "insensitive" } },
+            ],
+          }
+        : {}),
+      ...(filter === "dod" ? { hasDodId: true } : {}),
+      ...(filter === "travel" ? { travelPackage: true } : {}),
+      ...(eventId
+        ? { eventRegistrations: { some: { eventId } } }
+        : {}),
+    },
+    include: {
+      company: { select: { name: true } },
+      hotelManifestEntries: {
+        where: { eventId: currentEvent?.id ?? "" },
+        include: { hotel: { select: { name: true } } },
+        take: 1,
+      },
+    },
+    orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
+  });
+
+  return { trip, currentEvent, events: trip.events, attendees };
+}
+
+// ─── page ─────────────────────────────────────────────────────────────────────
+
+export default async function AttendeesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string; filter?: string; eventId?: string }>;
+}) {
+  await auth();
+  const { q, filter, eventId } = await searchParams;
+  const search = q ?? "";
+  const activeFilter = filter ?? "all";
+  const activeEventId = eventId ?? "";
+
+  const { trip, currentEvent, events, attendees } = await getAttendeesData(
+    search,
+    activeFilter,
+    activeEventId
+  );
+
   return (
-    <div className="px-4 pt-6">
-      <h1 className="text-xl font-semibold text-gray-900 mb-4">Attendees</h1>
+    <div className="px-4 pt-6 pb-24">
+      {/* Header */}
+      <h1 className="text-xl font-semibold text-gray-900 mb-1">Attendees</h1>
+      {trip && (
+        <p className="text-xs font-medium text-blue-700 mb-4">
+          {trip.name}
+          {currentEvent ? ` · ${currentEvent.name}, ${currentEvent.city}` : ""}
+        </p>
+      )}
 
-      {/* Search bar */}
-      <div className="relative mb-4">
-        <input
-          type="search"
-          placeholder="Search by name..."
-          className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm pr-10 focus:outline-none focus:ring-2 focus:ring-[#0C2340]"
-        />
-      </div>
+      {/* Search + filter */}
+      <AttendeeSearch
+        defaultSearch={search}
+        defaultFilter={activeFilter}
+        defaultEventId={activeEventId}
+        events={events.map((e) => ({ id: e.id, name: e.name, city: e.city }))}
+      />
 
-      {/* Placeholder list */}
-      <div className="bg-white rounded-2xl shadow-sm divide-y divide-gray-100">
-        <div className="px-4 py-8 text-center">
-          <p className="text-gray-400 text-sm">No attendees loaded yet.</p>
-          <p className="text-gray-300 text-xs mt-1">Run the import script to load data.</p>
+      {/* List */}
+      {!trip ? (
+        <div className="bg-white rounded-2xl p-6 shadow-sm text-center mt-4">
+          <p className="text-gray-400 text-sm">No active trip</p>
         </div>
-      </div>
+      ) : attendees.length === 0 ? (
+        <div className="bg-white rounded-2xl shadow-sm mt-3">
+          <div className="px-4 py-10 text-center">
+            <p className="text-gray-400 text-sm">
+              {search ? `No results for "${search}"` : "No attendees loaded yet."}
+            </p>
+            {!search && (
+              <p className="text-gray-300 text-xs mt-1">
+                Run the import script to load data.
+              </p>
+            )}
+          </div>
+        </div>
+      ) : (
+        <div className="bg-white rounded-2xl shadow-sm divide-y divide-gray-100 mt-3">
+          {attendees.map((attendee) => {
+            const hotel = attendee.hotelManifestEntries?.[0]?.hotel;
+            return (
+              <Link
+                key={attendee.id}
+                href={`/attendees/${attendee.id}`}
+                className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 active:bg-gray-100 first:rounded-t-2xl last:rounded-b-2xl"
+              >
+                {/* Initials avatar */}
+                <div className="w-9 h-9 rounded-full bg-blue-50 flex items-center justify-center shrink-0">
+                  <span className="text-xs font-semibold text-[#0C2340]">
+                    {attendee.firstName[0]}
+                    {attendee.lastName[0]}
+                  </span>
+                </div>
+
+                {/* Name + meta */}
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium text-gray-900">
+                    {attendee.lastName}, {attendee.firstName}
+                  </p>
+                  <p className="text-xs text-gray-400 truncate">
+                    {attendee.company?.name ?? "—"}
+                    {hotel ? ` · ${hotel.name}` : ""}
+                  </p>
+                </div>
+
+                {/* Badges + chevron */}
+                <div className="flex items-center gap-1 shrink-0">
+                  {attendee.hasDodId && (
+                    <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-amber-50 text-amber-700">
+                      DoD
+                    </span>
+                  )}
+                  {attendee.travelPackage && (
+                    <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-green-50 text-green-700">
+                      PKG
+                    </span>
+                  )}
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="#D1D5DB"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="ml-1"
+                  >
+                    <polyline points="9 18 15 12 9 6" />
+                  </svg>
+                </div>
+              </Link>
+            );
+          })}
+        </div>
+      )}
+
+      {attendees.length > 0 && (
+        <p className="text-center text-xs text-gray-400 mt-3">
+          {attendees.length} attendee{attendees.length !== 1 ? "s" : ""}
+        </p>
+      )}
     </div>
   );
 }
