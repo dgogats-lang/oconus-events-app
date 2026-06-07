@@ -142,7 +142,7 @@ export default async function MovementManifestPage({
       <div className="px-4 pt-4 flex items-center justify-between">
         <Link
           href="/movements"
-          className="inline-flex items-center gap-1 text-sm text-[#0C2340] font-medium"
+          className="inline-flex items-center gap-1 text-sm font-medium text-[#0C2340] bg-[#E8EDF2] rounded-full px-3 py-1.5"
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="15 18 9 12 15 6" />
@@ -151,7 +151,7 @@ export default async function MovementManifestPage({
         </Link>
         <Link
           href={`/movements/${movement.id}/edit`}
-          className="text-sm font-medium text-[#0C2340]"
+          className="text-sm font-medium text-[#0C2340] bg-[#E8EDF2] rounded-full px-3 py-1.5"
         >
           Edit
         </Link>
