@@ -410,6 +410,24 @@ export default async function TodayPage() {
                 </span>
               </div>
 
+              {/* Meet callout */}
+              {(nextMovement.meetTime || nextMovement.meetLocation) && (
+                <div className="mb-3 bg-blue-50 rounded-xl px-3 py-2 flex items-center gap-2">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-500 shrink-0">
+                    <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
+                  </svg>
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <span className="text-[10px] font-semibold text-blue-500 uppercase tracking-wide shrink-0">Meet</span>
+                    {nextMovement.meetLocation && (
+                      <span className="text-xs text-blue-900 font-medium truncate">{nextMovement.meetLocation}</span>
+                    )}
+                    {nextMovement.meetTime && (
+                      <span className="text-xs text-blue-700 shrink-0">{fmtTime(nextMovement.meetTime)}</span>
+                    )}
+                  </div>
+                </div>
+              )}
+
               {/* Route visual */}
               <div className="flex flex-col">
                 <div className="flex items-center gap-2.5">
@@ -430,24 +448,6 @@ export default async function TodayPage() {
                   <p className="text-sm text-gray-800">{nextMovement.arrivalLocation}</p>
                 </div>
               </div>
-
-              {/* Meet callout */}
-              {(nextMovement.meetTime || nextMovement.meetLocation) && (
-                <div className="mt-3 bg-blue-50 rounded-xl px-3 py-2 flex items-center gap-2">
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-500 shrink-0">
-                    <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
-                  </svg>
-                  <div className="flex items-center gap-1.5 min-w-0">
-                    <span className="text-[10px] font-semibold text-blue-500 uppercase tracking-wide shrink-0">Meet</span>
-                    {nextMovement.meetLocation && (
-                      <span className="text-xs text-blue-900 font-medium truncate">{nextMovement.meetLocation}</span>
-                    )}
-                    {nextMovement.meetTime && (
-                      <span className="text-xs text-blue-700 shrink-0">{fmtTime(nextMovement.meetTime)}</span>
-                    )}
-                  </div>
-                </div>
-              )}
 
               {/* Footer */}
               <div className="flex items-center mt-3 pt-3 border-t border-gray-50">

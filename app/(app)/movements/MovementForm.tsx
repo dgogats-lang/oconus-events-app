@@ -287,39 +287,6 @@ export default function MovementForm({
           </div>
         </div>
 
-        {/* ── Departure ────────────────────────────────────────────────── */}
-        <div>
-          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2 px-1">
-            Departure
-          </p>
-          <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
-            <div className="grid grid-cols-2 divide-x divide-gray-50">
-              <div className="flex flex-col px-4 py-3">
-                <label className="text-xs text-gray-400 mb-1.5" htmlFor="dep-date">Date</label>
-                <input
-                  id="dep-date"
-                  type="date"
-                  value={depDate}
-                  onChange={(e) => setDepDate(e.target.value)}
-                  className="text-sm text-gray-900 bg-transparent border-0 outline-none p-0 w-full"
-                  required
-                />
-              </div>
-              <div className="flex flex-col px-4 py-3">
-                <label className="text-xs text-gray-400 mb-1.5" htmlFor="dep-time">Time</label>
-                <input
-                  id="dep-time"
-                  type="time"
-                  value={depTime}
-                  onChange={(e) => setDepTime(e.target.value)}
-                  className="text-sm text-gray-900 bg-transparent border-0 outline-none p-0 w-full"
-                  required
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-
         {/* ── Meet ─────────────────────────────────────────────────────── */}
         <div>
           <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2 px-1">
@@ -359,6 +326,39 @@ export default function MovementForm({
                   value={meetTime}
                   onChange={(e) => setMeetTime(e.target.value)}
                   className="text-sm text-gray-900 bg-transparent border-0 outline-none p-0 w-full"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* ── Departure ────────────────────────────────────────────────── */}
+        <div>
+          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2 px-1">
+            Departure
+          </p>
+          <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+            <div className="grid grid-cols-2 divide-x divide-gray-50">
+              <div className="flex flex-col px-4 py-3">
+                <label className="text-xs text-gray-400 mb-1.5" htmlFor="dep-date">Date</label>
+                <input
+                  id="dep-date"
+                  type="date"
+                  value={depDate}
+                  onChange={(e) => setDepDate(e.target.value)}
+                  className="text-sm text-gray-900 bg-transparent border-0 outline-none p-0 w-full"
+                  required
+                />
+              </div>
+              <div className="flex flex-col px-4 py-3">
+                <label className="text-xs text-gray-400 mb-1.5" htmlFor="dep-time">Time</label>
+                <input
+                  id="dep-time"
+                  type="time"
+                  value={depTime}
+                  onChange={(e) => setDepTime(e.target.value)}
+                  className="text-sm text-gray-900 bg-transparent border-0 outline-none p-0 w-full"
+                  required
                 />
               </div>
             </div>
