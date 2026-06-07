@@ -30,7 +30,6 @@ const MOVEMENT_STATUS: Record<
 > = {
   PENDING: { label: "Not boarded", className: "bg-gray-100 text-gray-500" },
   CHECKED_IN: { label: "Boarded", className: "bg-green-50 text-green-700" },
-  NO_SHOW: { label: "No show", className: "bg-red-50 text-red-600" },
 };
 
 function fmtDateTime(d: Date | null | undefined) {
