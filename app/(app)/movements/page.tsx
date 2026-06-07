@@ -1,17 +1,197 @@
-// TODO: Fetch movements from db, wire up check-in
+import { auth } from "@/lib/auth";
+import { db } from "@/lib/db";
+import Link from "next/link";
+import { MovementMode } from "@prisma/client";
 
-export default function MovementsPage() {
+// ─── helpers ──────────────────────────────────────────────────────────────────
+
+const MODE_ICON: Record<MovementMode, string> = {
+  BUS:    "🚌",
+  CAR:    "🚗",
+  FLIGHT: "✈️",
+  TRAIN:  "🚆",
+  OTHER:  "🚐",
+};
+
+const MODE_LABEL: Record<MovementMode, string> = {
+  BUS:    "Bus",
+  CAR:    "Car",
+  FLIGHT: "Flight",
+  TRAIN:  "Train",
+  OTHER:  "Transfer",
+};
+
+function fmtTime(d: Date) {
+  return d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+}
+
+function fmtDateShort(d: Date) {
+  return d.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
+}
+
+function isToday(d: Date) {
+  const now = new Date();
   return (
-    <div className="px-4 pt-6">
-      <h1 className="text-xl font-semibold text-gray-900 mb-4">Movements</h1>
+    d.getFullYear() === now.getFullYear() &&
+    d.getMonth() === now.getMonth() &&
+    d.getDate() === now.getDate()
+  );
+}
 
-      {/* Placeholder */}
-      <div className="bg-white rounded-2xl shadow-sm">
-        <div className="px-4 py-8 text-center">
+function isPast(d: Date) {
+  return d < new Date();
+}
+
+// ─── data fetching ────────────────────────────────────────────────────────────
+
+async function getMovementsData() {
+  const trip = await db.trip.findFirst({
+    where: { isActive: true },
+    include: {
+      events: {
+        orderBy: { date: "asc" },
+        include: {
+          movements: {
+            orderBy: { departureTime: "asc" },
+            include: {
+              movementManifestEntries: {
+                select: { status: true },
+              },
+            },
+          },
+        },
+      },
+    },
+  });
+
+  return trip;
+}
+
+// ─── component ────────────────────────────────────────────────────────────────
+
+export default async function MovementsPage() {
+  await auth(); // ensure session is active
+
+  const trip = await getMovementsData();
+
+  if (!trip) {
+    return (
+      <div className="px-4 pt-6">
+        <h1 className="text-xl font-semibold text-gray-900 mb-4">Movements</h1>
+        <div className="bg-white rounded-2xl shadow-sm px-4 py-8 text-center">
+          <p className="text-gray-400 text-sm">No active trip.</p>
+        </div>
+      </div>
+    );
+  }
+
+  const hasAnyMovements = trip.events.some((e) => e.movements.length > 0);
+
+  return (
+    <div className="pb-24">
+      <div className="px-4 pt-6 pb-2">
+        <h1 className="text-xl font-semibold text-gray-900">Movements</h1>
+        <p className="text-xs text-gray-400 mt-0.5">{trip.name}</p>
+      </div>
+
+      {!hasAnyMovements ? (
+        <div className="mx-4 bg-white rounded-2xl shadow-sm px-4 py-8 text-center">
           <p className="text-gray-400 text-sm">No movements yet.</p>
           <p className="text-gray-300 text-xs mt-1">Movements will appear here once data is imported.</p>
         </div>
-      </div>
+      ) : (
+        <div className="space-y-6 px-4 pt-2">
+          {trip.events.map((event) => {
+            if (event.movements.length === 0) return null;
+
+            return (
+              <div key={event.id}>
+                {/* Event section header */}
+                <div className="flex items-center gap-2 mb-2">
+                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                    {event.name}
+                  </p>
+                  <p className="text-xs text-gray-400">
+                    · {fmtDateShort(event.date)}
+                  </p>
+                </div>
+
+                {/* Movement rows */}
+                <div className="bg-white rounded-2xl shadow-sm overflow-hidden divide-y divide-gray-50">
+                  {event.movements.map((movement) => {
+                    const total = movement.movementManifestEntries.length;
+                    const checkedIn = movement.movementManifestEntries.filter(
+                      (e) => e.status === "CHECKED_IN"
+                    ).length;
+                    const allDone = total > 0 && checkedIn === total;
+                    const departing = isPast(movement.departureTime);
+                    const todayMovement = isToday(movement.departureTime);
+
+                    return (
+                      <Link
+                        key={movement.id}
+                        href={`/movements/${movement.id}`}
+                        className="flex items-center gap-3 px-4 py-3.5 hover:bg-gray-50 active:bg-gray-100"
+                      >
+                        {/* Mode icon */}
+                        <div className="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center shrink-0 text-lg leading-none">
+                          {MODE_ICON[movement.mode]}
+                        </div>
+
+                        {/* Main info */}
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-gray-900 truncate">
+                            {movement.name}
+                          </p>
+                          <p className="text-xs text-gray-400 mt-0.5">
+                            {MODE_LABEL[movement.mode]} · {fmtTime(movement.departureTime)}
+                            {movement.arrivalTime
+                              ? ` → ${fmtTime(movement.arrivalTime)}`
+                              : ""}
+                          </p>
+                        </div>
+
+                        {/* Right: count + chevron */}
+                        <div className="flex items-center gap-2 shrink-0">
+                          {total > 0 && (
+                            <span
+                              className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
+                                allDone
+                                  ? "bg-green-50 text-green-700"
+                                  : todayMovement && !departing
+                                  ? "bg-blue-50 text-blue-700"
+                                  : "bg-gray-100 text-gray-600"
+                              }`}
+                            >
+                              {checkedIn}/{total}
+                            </span>
+                          )}
+                          {total === 0 && (
+                            <span className="text-xs text-gray-300">Empty</span>
+                          )}
+                          <svg
+                            width="16"
+                            height="16"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2.5"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            className="text-gray-300"
+                          >
+                            <polyline points="9 18 15 12 9 6" />
+                          </svg>
+                        </div>
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

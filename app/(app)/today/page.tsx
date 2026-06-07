@@ -48,6 +48,8 @@ function fmtDayTime(d: Date | null | undefined) {
 
 async function getTodayData() {
   const now = new Date();
+  const todayStart = startOfDay(now);
+  const todayEnd = endOfDay(now);
 
   // 1. Active trip
   const trip = await db.trip.findFirst({
@@ -60,9 +62,6 @@ async function getTodayData() {
   if (!trip) return { trip: null };
 
   // 2. Current event: prefer today, else nearest (future first, then most recent past)
-  const todayStart = startOfDay(now);
-  const todayEnd = endOfDay(now);
-
   let currentEvent =
     trip.events.find(
       (e) => e.date >= todayStart && e.date <= todayEnd
@@ -71,26 +70,99 @@ async function getTodayData() {
     trip.events[trip.events.length - 1] ??   // most recent past
     null;
 
-  // 3. Today's arrivals for the active trip (flat fields on Attendee)
-  const todayArrivals = await db.attendee.findMany({
-    where: {
-      tripId: trip.id,
-      arrivalScheduledAt: { gte: todayStart, lte: todayEnd },
-    },
-    select: {
-      id: true,
-      firstName: true,
-      lastName: true,
-      arrivalAirline: true,
-      arrivalFlightNumber: true,
-      arrivalAirport: true,
-      arrivalScheduledAt: true,
-      arrivalStatus: true,
-    },
-    orderBy: { arrivalScheduledAt: "asc" },
-  });
+  // 3. Arrival/departure window boundaries (for card visibility)
+  //    Arrivals card: visible while today <= last arrival date
+  //    Departures card: visible once today >= first departure date
+  const [lastArrivalRow, firstDepartureRow] = await Promise.all([
+    db.attendee.findFirst({
+      where: { tripId: trip.id, arrivalScheduledAt: { not: null } },
+      orderBy: { arrivalScheduledAt: "desc" },
+      select: { arrivalScheduledAt: true },
+    }),
+    db.attendee.findFirst({
+      where: { tripId: trip.id, departureScheduledAt: { not: null } },
+      orderBy: { departureScheduledAt: "asc" },
+      select: { departureScheduledAt: true },
+    }),
+  ]);
 
-  // 4. Next movement for current event
+  const lastArrivalDate = lastArrivalRow?.arrivalScheduledAt
+    ? startOfDay(lastArrivalRow.arrivalScheduledAt)
+    : null;
+  const firstDepartureDate = firstDepartureRow?.departureScheduledAt
+    ? startOfDay(firstDepartureRow.departureScheduledAt)
+    : null;
+
+  const showArrivals = lastArrivalDate ? todayStart <= lastArrivalDate : false;
+  const showDepartures = firstDepartureDate ? todayStart >= firstDepartureDate : false;
+
+  // 4. Today's arrivals (only fetched when card is visible)
+  const todayArrivals = showArrivals
+    ? await db.attendee.findMany({
+        where: {
+          tripId: trip.id,
+          arrivalScheduledAt: { gte: todayStart, lte: todayEnd },
+        },
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          arrivalAirline: true,
+          arrivalFlightNumber: true,
+          arrivalAirport: true,
+          arrivalScheduledAt: true,
+        },
+        orderBy: { arrivalScheduledAt: "asc" },
+      })
+    : [];
+
+  // Next arrival date when none are today (card still in-window but empty today)
+  const nextArrivalRow =
+    showArrivals && todayArrivals.length === 0
+      ? await db.attendee.findFirst({
+          where: {
+            tripId: trip.id,
+            arrivalScheduledAt: { gt: todayEnd },
+          },
+          orderBy: { arrivalScheduledAt: "asc" },
+          select: { arrivalScheduledAt: true },
+        })
+      : null;
+
+  // 5. Today's departures (only fetched when card is visible)
+  const todayDepartures = showDepartures
+    ? await db.attendee.findMany({
+        where: {
+          tripId: trip.id,
+          departureScheduledAt: { gte: todayStart, lte: todayEnd },
+        },
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          departureAirline: true,
+          departureFlightNumber: true,
+          departureAirport: true,
+          departureScheduledAt: true,
+        },
+        orderBy: { departureScheduledAt: "asc" },
+      })
+    : [];
+
+  // Next departure date when none are today
+  const nextDepartureRow =
+    showDepartures && todayDepartures.length === 0
+      ? await db.attendee.findFirst({
+          where: {
+            tripId: trip.id,
+            departureScheduledAt: { gt: todayEnd },
+          },
+          orderBy: { departureScheduledAt: "asc" },
+          select: { departureScheduledAt: true },
+        })
+      : null;
+
+  // 6. Next movement for current event
   const nextMovement = currentEvent
     ? await db.movement.findFirst({
         where: {
@@ -104,7 +176,7 @@ async function getTodayData() {
       })
     : null;
 
-  // 5. Hotels for current event with attendee counts
+  // 7. Hotels for current event with attendee counts
   const hotels = currentEvent
     ? await db.hotel.findMany({
         where: { eventId: currentEvent.id },
@@ -115,15 +187,36 @@ async function getTodayData() {
       })
     : [];
 
-  return { trip, currentEvent, todayArrivals, nextMovement, hotels };
+  return {
+    trip,
+    currentEvent,
+    showArrivals,
+    todayArrivals,
+    nextArrivalDate: nextArrivalRow?.arrivalScheduledAt ?? null,
+    showDepartures,
+    todayDepartures,
+    nextDepartureDate: nextDepartureRow?.departureScheduledAt ?? null,
+    nextMovement,
+    hotels,
+  };
 }
 
 // ─── page ────────────────────────────────────────────────────────────────────
 
 export default async function TodayPage() {
   const session = await auth();
-  const { trip, currentEvent, todayArrivals, nextMovement, hotels } =
-    await getTodayData();
+  const {
+    trip,
+    currentEvent,
+    showArrivals,
+    todayArrivals,
+    nextArrivalDate,
+    showDepartures,
+    todayDepartures,
+    nextDepartureDate,
+    nextMovement,
+    hotels,
+  } = await getTodayData();
 
   const today = new Date();
 
@@ -166,33 +259,103 @@ export default async function TodayPage() {
         </div>
       ) : (
         <div className="space-y-3">
-          {/* ── Arrivals today ─────────────────────────────────────────── */}
-          <Link href="/today/arrivals" className="block bg-white rounded-2xl p-4 shadow-sm active:bg-gray-50">
-            <div className="flex items-center gap-2 mb-3">
-              <p className="text-sm font-semibold text-gray-800">Arrivals today</p>
-              <div className="flex-1 h-px bg-blue-100" />
-            </div>
-            {todayArrivals.length === 0 ? (
-              <p className="text-gray-400 text-sm">No arrivals scheduled today</p>
-            ) : (
-              <div className="flex items-end justify-between">
-                <div className="flex items-baseline gap-2">
-                  <span className="text-4xl font-semibold text-gray-900">
-                    {todayArrivals.length}
-                  </span>
-                  <span className="text-sm text-gray-400">
-                    {todayArrivals.length === 1 ? "arrival" : "arrivals"}
-                  </span>
-                </div>
-                <div className="flex items-center gap-1 text-xs text-gray-400">
-                  <span>View all</span>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="9 18 15 12 9 6" />
-                  </svg>
-                </div>
+          {/* ── Arrivals card (visible while today ≤ last arrival date) ── */}
+          {showArrivals && (
+            <Link href="/today/arrivals" className="block bg-white rounded-2xl p-4 shadow-sm active:bg-gray-50">
+              <div className="flex items-center gap-2 mb-3">
+                <p className="text-sm font-semibold text-gray-800">Arrivals</p>
+                <div className="flex-1 h-px bg-blue-100" />
               </div>
-            )}
-          </Link>
+              {todayArrivals.length > 0 ? (
+                <div className="flex items-end justify-between">
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-4xl font-semibold text-gray-900">
+                      {todayArrivals.length}
+                    </span>
+                    <span className="text-sm text-gray-400">
+                      {todayArrivals.length === 1 ? "arrival today" : "arrivals today"}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1 text-xs text-gray-400">
+                    <span>View all</span>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="9 18 15 12 9 6" />
+                    </svg>
+                  </div>
+                </div>
+              ) : nextArrivalDate ? (
+                <div className="flex items-center justify-between">
+                  <p className="text-sm text-gray-500">
+                    Next:{" "}
+                    <span className="font-medium text-gray-800">
+                      {nextArrivalDate.toLocaleDateString("en-US", {
+                        weekday: "short",
+                        month: "short",
+                        day: "numeric",
+                      })}
+                    </span>
+                  </p>
+                  <div className="flex items-center gap-1 text-xs text-gray-400">
+                    <span>View all</span>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="9 18 15 12 9 6" />
+                    </svg>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-gray-400 text-sm">No arrivals scheduled today</p>
+              )}
+            </Link>
+          )}
+
+          {/* ── Departures card (visible once today ≥ first departure date) */}
+          {showDepartures && (
+            <Link href="/today/departures" className="block bg-white rounded-2xl p-4 shadow-sm active:bg-gray-50">
+              <div className="flex items-center gap-2 mb-3">
+                <p className="text-sm font-semibold text-gray-800">Departures</p>
+                <div className="flex-1 h-px bg-blue-100" />
+              </div>
+              {todayDepartures.length > 0 ? (
+                <div className="flex items-end justify-between">
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-4xl font-semibold text-gray-900">
+                      {todayDepartures.length}
+                    </span>
+                    <span className="text-sm text-gray-400">
+                      {todayDepartures.length === 1 ? "departure today" : "departures today"}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1 text-xs text-gray-400">
+                    <span>View all</span>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="9 18 15 12 9 6" />
+                    </svg>
+                  </div>
+                </div>
+              ) : nextDepartureDate ? (
+                <div className="flex items-center justify-between">
+                  <p className="text-sm text-gray-500">
+                    Next:{" "}
+                    <span className="font-medium text-gray-800">
+                      {nextDepartureDate.toLocaleDateString("en-US", {
+                        weekday: "short",
+                        month: "short",
+                        day: "numeric",
+                      })}
+                    </span>
+                  </p>
+                  <div className="flex items-center gap-1 text-xs text-gray-400">
+                    <span>View all</span>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="9 18 15 12 9 6" />
+                    </svg>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-gray-400 text-sm">No departures scheduled today</p>
+              )}
+            </Link>
+          )}
 
           {/* ── Next movement ───────────────────────────────────────────── */}
           <div className="bg-white rounded-2xl p-4 shadow-sm">

@@ -271,7 +271,6 @@ model MovementManifestEntry {
 enum MovementEntryStatus {
   PENDING
   CHECKED_IN
-  NO_SHOW
 }
 
 enum FlightStatus {
