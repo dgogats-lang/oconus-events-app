@@ -36,7 +36,7 @@ async function getMovement(id: string) {
   const movement = await db.movement.findUnique({
     where: { id },
     include: {
-      event: { select: { id: true, name: true, city: true } },
+      event: { select: { id: true, name: true, city: true, tripId: true } },
       movementManifestEntries: {
         orderBy: [
           { attendee: { lastName: "asc" } },
@@ -86,7 +86,7 @@ export default async function MovementManifestPage({
   const movement = await db.movement.findUnique({
     where: { id },
     include: {
-      event: { select: { id: true, name: true, city: true } },
+      event: { select: { id: true, name: true, city: true, tripId: true } },
       movementManifestEntries: {
         orderBy: [
           { attendee: { lastName: "asc" } },
@@ -114,6 +114,27 @@ export default async function MovementManifestPage({
   });
 
   if (!movement) notFound();
+
+  // Fetch trip attendees (for add flow) + other movements for same event (for transfer)
+  const [tripAttendees, otherMovements] = await Promise.all([
+    db.attendee.findMany({
+      where: { tripId: movement.event.tripId },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        email: true,
+        phone: true,
+        company: { select: { name: true } },
+      },
+      orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
+    }),
+    db.movement.findMany({
+      where: { eventId: movement.event.id, id: { not: movement.id } },
+      select: { id: true, name: true, departureTime: true },
+      orderBy: { departureTime: "asc" },
+    }),
+  ]);
 
   return (
     <div className="pb-24">
@@ -191,6 +212,8 @@ export default async function MovementManifestPage({
         <ManifestClient
           movementId={movement.id}
           entries={movement.movementManifestEntries}
+          tripAttendees={tripAttendees}
+          otherMovements={otherMovements}
         />
       </div>
     </div>
