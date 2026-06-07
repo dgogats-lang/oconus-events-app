@@ -31,7 +31,8 @@ interface HotelFormProps {
 
 declare global {
   interface Window {
-    google: typeof google;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    google: any;
     initGooglePlaces?: () => void;
   }
 }
@@ -56,7 +57,8 @@ export default function HotelForm({
   const [isPending, startTransition]    = useTransition();
 
   const addressRef = useRef<HTMLInputElement>(null);
-  const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const autocompleteRef = useRef<any>(null);
 
   const isTransit = eventId === "transit";
   const selectedEvent = events.find((e) => e.id === eventId);
