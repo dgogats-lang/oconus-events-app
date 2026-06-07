@@ -4,10 +4,6 @@ import { useState, useTransition, useRef, useCallback } from "react";
 import { MovementEntryStatus } from "@prisma/client";
 import { updateManifestEntry } from "@/actions/movement";
 
-// ─── feature flag ─────────────────────────────────────────────────────────────
-// Set to false to disable swipe-to-check-in
-const SWIPE_TO_CHECK_IN = true;
-
 // ─── types ────────────────────────────────────────────────────────────────────
 
 interface HotelInfo {
@@ -175,8 +171,6 @@ function ManifestRow({
 }) {
   const [status, setStatus] = useState<MovementEntryStatus>(entry.status);
   const [isPending, startTransition] = useTransition();
-  const touchStartX = useRef<number | null>(null);
-  const touchStartY = useRef<number | null>(null);
 
   const toggleCheckIn = useCallback(() => {
     const next: MovementEntryStatus =
@@ -188,37 +182,11 @@ function ManifestRow({
     });
   }, [status, movementId, entry.attendeeId]);
 
-  // Swipe right to check in
-  function handleTouchStart(e: React.TouchEvent) {
-    if (!SWIPE_TO_CHECK_IN) return;
-    touchStartX.current = e.touches[0].clientX;
-    touchStartY.current = e.touches[0].clientY;
-  }
-
-  function handleTouchEnd(e: React.TouchEvent) {
-    if (!SWIPE_TO_CHECK_IN) return;
-    if (touchStartX.current === null || touchStartY.current === null) return;
-
-    const dx = e.changedTouches[0].clientX - touchStartX.current;
-    const dy = Math.abs(e.changedTouches[0].clientY - touchStartY.current);
-
-    // Only trigger on a clear rightward swipe (>60px horizontal, <30px vertical drift)
-    if (dx > 60 && dy < 30 && status !== "CHECKED_IN" && !isPending) {
-      toggleCheckIn();
-    }
-
-    touchStartX.current = null;
-    touchStartY.current = null;
-  }
-
   const isCheckedIn = status === "CHECKED_IN";
 
   return (
     <div
       className="flex items-center gap-3 px-4 py-3.5 divide-x-0"
-      onTouchStart={handleTouchStart}
-      onTouchEnd={handleTouchEnd}
-      style={{ touchAction: "pan-y" }}
     >
       {/* Check-in toggle — ONLY tap target for status */}
       <button
@@ -323,16 +291,9 @@ export default function ManifestClient({
         )}
       </div>
 
-      {SWIPE_TO_CHECK_IN && (
-        <p className="text-xs text-gray-300 px-1 mb-2">
-          Tap ○ to check in · Swipe right · Tap name for contact
-        </p>
-      )}
-      {!SWIPE_TO_CHECK_IN && (
-        <p className="text-xs text-gray-300 px-1 mb-2">
-          Tap ○ to check in · Tap name for contact
-        </p>
-      )}
+      <p className="text-xs text-gray-300 px-1 mb-2">
+        Tap ○ to check in · Tap name for contact
+      </p>
 
       <div className="bg-white rounded-2xl shadow-sm overflow-hidden divide-y divide-gray-50">
         {sorted.map((entry) => (
