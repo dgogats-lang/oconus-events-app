@@ -199,6 +199,26 @@ export default async function MovementManifestPage({
           </div>
         </div>
 
+        {/* Meet */}
+        {(movement.meetTime || movement.meetLocation) && (
+          <div className="mt-3 bg-blue-50 rounded-xl px-3 py-2.5 flex items-start gap-2.5">
+            <div className="shrink-0 mt-0.5">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-500">
+                <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
+              </svg>
+            </div>
+            <div>
+              <p className="text-[10px] font-semibold text-blue-500 uppercase tracking-wide mb-0.5">Meet</p>
+              {movement.meetLocation && (
+                <p className="text-xs text-blue-900 font-medium">{movement.meetLocation}</p>
+              )}
+              {movement.meetTime && (
+                <p className="text-xs text-blue-700">{fmtDayTime(movement.meetTime)}</p>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Notes */}
         {movement.notes && (
           <div className="mt-3 bg-amber-50 rounded-xl px-3 py-2.5">

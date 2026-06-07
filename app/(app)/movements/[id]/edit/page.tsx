@@ -23,6 +23,8 @@ export default async function EditMovementPage({
         arrivalLocation: true,
         departureTime: true,
         arrivalTime: true,
+        meetTime: true,
+        meetLocation: true,
         notes: true,
       },
     }),
@@ -52,6 +54,8 @@ export default async function EditMovementPage({
         arrivalLocation:   movement.arrivalLocation,
         departureTime:     movement.departureTime.toISOString(),
         arrivalTime:       movement.arrivalTime?.toISOString() ?? null,
+        meetTime:          movement.meetTime?.toISOString() ?? null,
+        meetLocation:      movement.meetLocation,
         notes:             movement.notes,
       }}
     />

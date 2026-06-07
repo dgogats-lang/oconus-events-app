@@ -231,6 +231,8 @@ model Movement {
   arrivalLocation   String
   departureTime     DateTime
   arrivalTime       DateTime?
+  meetTime          DateTime?
+  meetLocation      String?
   notes             String?
 
   event                   Event                   @relation(fields: [eventId], references: [id], onDelete: Cascade)

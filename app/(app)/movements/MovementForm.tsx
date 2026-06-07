@@ -22,6 +22,8 @@ interface InitialValues {
   arrivalLocation: string;
   departureTime: string; // ISO string
   arrivalTime?: string | null;
+  meetTime?: string | null;
+  meetLocation?: string | null;
   notes?: string | null;
 }
 
@@ -76,6 +78,9 @@ export default function MovementForm({
   const [depTime, setDepTime]       = useState(() => initialValues?.departureTime ? toLocalTime(initialValues.departureTime) : "");
   const [arrDate, setArrDate]       = useState(() => initialValues?.arrivalTime ? toLocalDate(initialValues.arrivalTime) : "");
   const [arrTime, setArrTime]       = useState(() => initialValues?.arrivalTime ? toLocalTime(initialValues.arrivalTime) : "");
+  const [meetDate, setMeetDate]     = useState(() => initialValues?.meetTime ? toLocalDate(initialValues.meetTime) : "");
+  const [meetTime, setMeetTime]     = useState(() => initialValues?.meetTime ? toLocalTime(initialValues.meetTime) : "");
+  const [meetLocation, setMeetLocation] = useState(initialValues?.meetLocation ?? "");
   const [notes, setNotes]           = useState(initialValues?.notes ?? "");
   const [error, setError]           = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -95,6 +100,7 @@ export default function MovementForm({
     // meaning it regardless of what timezone the browser is in.
     const departureTimeISO = `${depDate}T${depTime}:00.000Z`;
     const arrivalTimeISO   = arrDate && arrTime ? `${arrDate}T${arrTime}:00.000Z` : null;
+    const meetTimeISO      = meetDate && meetTime ? `${meetDate}T${meetTime}:00.000Z` : null;
 
     startTransition(async () => {
       if (isEdit) {
@@ -106,6 +112,8 @@ export default function MovementForm({
           arrivalLocation:   arrLocation.trim(),
           departureTime:     departureTimeISO,
           arrivalTime:       arrivalTimeISO,
+          meetTime:          meetTimeISO,
+          meetLocation:      meetLocation.trim() || null,
           notes:             notes.trim() || null,
         });
         if (result.success) {
@@ -122,6 +130,8 @@ export default function MovementForm({
           arrivalLocation:   arrLocation.trim(),
           departureTime:     departureTimeISO,
           arrivalTime:       arrivalTimeISO,
+          meetTime:          meetTimeISO,
+          meetLocation:      meetLocation.trim() || null,
           notes:             notes.trim() || null,
         });
         if (result.success && result.id) {
@@ -304,6 +314,51 @@ export default function MovementForm({
                   onChange={(e) => setDepTime(e.target.value)}
                   className="text-sm text-gray-900 bg-transparent border-0 outline-none p-0 w-full"
                   required
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* ── Meet ─────────────────────────────────────────────────────── */}
+        <div>
+          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2 px-1">
+            Meet{" "}
+            <span className="text-gray-300 normal-case font-normal tracking-normal">· optional</span>
+          </p>
+          <div className="bg-white rounded-2xl shadow-sm overflow-hidden divide-y divide-gray-50">
+            <div className="flex items-center px-4 py-3.5">
+              <label className="text-sm text-gray-700 w-24 shrink-0" htmlFor="meet-loc">
+                Location
+              </label>
+              <input
+                id="meet-loc"
+                type="text"
+                value={meetLocation}
+                onChange={(e) => setMeetLocation(e.target.value)}
+                placeholder="e.g. Hotel lobby"
+                className="flex-1 text-sm text-gray-900 text-right bg-transparent border-0 outline-none placeholder-gray-300 min-w-0"
+              />
+            </div>
+            <div className="grid grid-cols-2 divide-x divide-gray-50">
+              <div className="flex flex-col px-4 py-3">
+                <label className="text-xs text-gray-400 mb-1.5" htmlFor="meet-date">Date</label>
+                <input
+                  id="meet-date"
+                  type="date"
+                  value={meetDate}
+                  onChange={(e) => setMeetDate(e.target.value)}
+                  className="text-sm text-gray-900 bg-transparent border-0 outline-none p-0 w-full"
+                />
+              </div>
+              <div className="flex flex-col px-4 py-3">
+                <label className="text-xs text-gray-400 mb-1.5" htmlFor="meet-time">Time</label>
+                <input
+                  id="meet-time"
+                  type="time"
+                  value={meetTime}
+                  onChange={(e) => setMeetTime(e.target.value)}
+                  className="text-sm text-gray-900 bg-transparent border-0 outline-none p-0 w-full"
                 />
               </div>
             </div>

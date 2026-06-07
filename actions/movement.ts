@@ -13,6 +13,8 @@ export async function createMovement(data: {
   arrivalLocation: string;
   departureTime: string; // ISO string (UTC)
   arrivalTime?: string | null;
+  meetTime?: string | null;
+  meetLocation?: string | null;
   notes?: string | null;
 }): Promise<{ success: boolean; id?: string; error?: string }> {
   const session = await auth();
@@ -27,6 +29,8 @@ export async function createMovement(data: {
         arrivalLocation: data.arrivalLocation.trim(),
         departureTime: new Date(data.departureTime),
         arrivalTime: data.arrivalTime ? new Date(data.arrivalTime) : null,
+        meetTime: data.meetTime ? new Date(data.meetTime) : null,
+        meetLocation: data.meetLocation?.trim() || null,
         notes: data.notes?.trim() || null,
       },
     });
@@ -47,6 +51,8 @@ export async function updateMovement(
     arrivalLocation: string;
     departureTime: string;
     arrivalTime?: string | null;
+    meetTime?: string | null;
+    meetLocation?: string | null;
     notes?: string | null;
   }
 ): Promise<{ success: boolean; error?: string }> {
@@ -63,6 +69,8 @@ export async function updateMovement(
         arrivalLocation: data.arrivalLocation.trim(),
         departureTime: new Date(data.departureTime),
         arrivalTime: data.arrivalTime ? new Date(data.arrivalTime) : null,
+        meetTime: data.meetTime ? new Date(data.meetTime) : null,
+        meetLocation: data.meetLocation?.trim() || null,
         notes: data.notes?.trim() || null,
       },
     });
