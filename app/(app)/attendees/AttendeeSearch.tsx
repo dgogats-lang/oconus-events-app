@@ -3,8 +3,7 @@
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { useCallback, useRef } from "react";
 
-const FILTERS = [
-  { value: "all", label: "All" },
+const ATTR_FILTERS = [
   { value: "dod", label: "Has DoD ID" },
   { value: "travel", label: "Travel Package" },
 ];
@@ -13,12 +12,12 @@ type EventOption = { id: string; name: string; city: string };
 
 export default function AttendeeSearch({
   defaultSearch,
-  defaultFilter,
+  defaultFilters,
   defaultEventId,
   events,
 }: {
   defaultSearch: string;
-  defaultFilter: string;
+  defaultFilters: string[];
   defaultEventId: string;
   events: EventOption[];
 }) {
@@ -28,11 +27,11 @@ export default function AttendeeSearch({
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const pushParams = useCallback(
-    (q: string, filter: string, eventId: string) => {
+    (q: string, filters: string[], eventId: string) => {
       const params = new URLSearchParams(searchParams.toString());
       if (q) params.set("q", q);
       else params.delete("q");
-      if (filter && filter !== "all") params.set("filter", filter);
+      if (filters.length > 0) params.set("filter", filters.join(","));
       else params.delete("filter");
       if (eventId) params.set("eventId", eventId);
       else params.delete("eventId");
@@ -44,17 +43,19 @@ export default function AttendeeSearch({
   const handleSearch = (value: string) => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
-      pushParams(value, defaultFilter, defaultEventId);
+      pushParams(value, defaultFilters, defaultEventId);
     }, 300);
   };
 
-  const handleFilter = (value: string) => {
-    pushParams(defaultSearch, value, defaultEventId);
+  const handleAttrFilter = (value: string) => {
+    const next = defaultFilters.includes(value)
+      ? defaultFilters.filter((f) => f !== value)
+      : [...defaultFilters, value];
+    pushParams(defaultSearch, next, defaultEventId);
   };
 
   const handleEvent = (id: string) => {
-    // Toggle: tapping the active event clears it
-    pushParams(defaultSearch, defaultFilter, id === defaultEventId ? "" : id);
+    pushParams(defaultSearch, defaultFilters, id === defaultEventId ? "" : id);
   };
 
   return (
@@ -84,24 +85,7 @@ export default function AttendeeSearch({
         />
       </div>
 
-      {/* Attribute filter chips */}
-      <div className="flex gap-2 flex-wrap">
-        {FILTERS.map((f) => (
-          <button
-            key={f.value}
-            onClick={() => handleFilter(f.value)}
-            className={`text-xs font-medium px-3 py-1.5 rounded-full border transition-colors ${
-              defaultFilter === f.value
-                ? "bg-[#0C2340] text-white border-[#0C2340]"
-                : "bg-white text-gray-600 border-gray-200"
-            }`}
-          >
-            {f.label}
-          </button>
-        ))}
-      </div>
-
-      {/* Event filter chips */}
+      {/* Event filter chips — single select */}
       {events.length > 0 && (
         <div className="flex gap-2 flex-wrap">
           {events.map((ev) => {
@@ -112,7 +96,7 @@ export default function AttendeeSearch({
                 onClick={() => handleEvent(ev.id)}
                 className={`text-xs font-medium px-3 py-1.5 rounded-full border transition-colors ${
                   active
-                    ? "bg-blue-600 text-white border-blue-600"
+                    ? "bg-[#0C2340] text-white border-[#0C2340]"
                     : "bg-white text-gray-600 border-gray-200"
                 }`}
               >
@@ -122,6 +106,26 @@ export default function AttendeeSearch({
           })}
         </div>
       )}
+
+      {/* Attribute filter chips — multi select */}
+      <div className="flex gap-2 flex-wrap">
+        {ATTR_FILTERS.map((f) => {
+          const active = defaultFilters.includes(f.value);
+          return (
+            <button
+              key={f.value}
+              onClick={() => handleAttrFilter(f.value)}
+              className={`text-xs font-medium px-3 py-1.5 rounded-full border transition-colors ${
+                active
+                  ? "bg-[#0C2340] text-white border-[#0C2340]"
+                  : "bg-white text-gray-600 border-gray-200"
+              }`}
+            >
+              {f.label}
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }

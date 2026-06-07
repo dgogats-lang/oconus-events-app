@@ -7,7 +7,7 @@ import AttendeeSearch from "./AttendeeSearch";
 
 async function getAttendeesData(
   search: string,
-  filter: string,
+  filters: string[],
   eventId: string
 ) {
   const trip = await db.trip.findFirst({
@@ -37,8 +37,14 @@ async function getAttendeesData(
             ],
           }
         : {}),
-      ...(filter === "dod" ? { hasDodId: true } : {}),
-      ...(filter === "travel" ? { travelPackage: true } : {}),
+      ...(filters.length > 0
+        ? {
+            OR: [
+              ...(filters.includes("dod") ? [{ hasDodId: true }] : []),
+              ...(filters.includes("travel") ? [{ travelPackage: true }] : []),
+            ],
+          }
+        : {}),
       ...(eventId
         ? { eventRegistrations: { some: { eventId } } }
         : {}),
@@ -67,30 +73,38 @@ export default async function AttendeesPage({
   await auth();
   const { q, filter, eventId } = await searchParams;
   const search = q ?? "";
-  const activeFilter = filter ?? "all";
+  const activeFilters = (filter ?? "").split(",").filter(Boolean);
   const activeEventId = eventId ?? "";
 
   const { trip, currentEvent, events, attendees } = await getAttendeesData(
     search,
-    activeFilter,
+    activeFilters,
     activeEventId
   );
 
   return (
     <div className="px-4 pt-6 pb-24">
       {/* Header */}
-      <h1 className="text-xl font-semibold text-gray-900 mb-1">Attendees</h1>
-      {trip && (
-        <p className="text-xs font-medium text-blue-700 mb-4">
-          {trip.name}
-          {currentEvent ? ` · ${currentEvent.name}, ${currentEvent.city}` : ""}
-        </p>
-      )}
+      <div className="mb-4">
+        {trip && (
+          <p className="text-[10px] font-bold text-gray-400 tracking-widest uppercase mb-1.5">
+            {trip.name}
+          </p>
+        )}
+        <div className="flex items-center justify-between">
+          <h1 className="text-[30px] font-extrabold text-[#0C2340] tracking-tight leading-none">
+            Attendees
+          </h1>
+          <span className="bg-[#0C2340] text-white text-xs font-bold px-3 py-1.5 rounded-full">
+            {attendees.length}
+          </span>
+        </div>
+      </div>
 
       {/* Search + filter */}
       <AttendeeSearch
         defaultSearch={search}
-        defaultFilter={activeFilter}
+        defaultFilters={activeFilters}
         defaultEventId={activeEventId}
         events={events.map((e) => ({ id: e.id, name: e.name, city: e.city }))}
       />
