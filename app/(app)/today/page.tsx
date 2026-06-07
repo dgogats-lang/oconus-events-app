@@ -358,55 +358,80 @@ export default async function TodayPage() {
           )}
 
           {/* ── Next movement ───────────────────────────────────────────── */}
-          <div className="bg-white rounded-2xl p-4 shadow-sm">
-            <div className="flex items-center gap-2 mb-3">
-              <p className="text-sm font-semibold text-gray-800">
-                Next movement
+          {!currentEvent || !nextMovement ? (
+            <div className="bg-white rounded-2xl p-4 shadow-sm">
+              <div className="flex items-center gap-2 mb-3">
+                <p className="text-sm font-semibold text-gray-800">Next movement</p>
+                <div className="flex-1 h-px bg-blue-100" />
+              </div>
+              <p className="text-gray-400 text-sm">
+                {!currentEvent ? "No current event" : "No upcoming movements"}
               </p>
-              <div className="flex-1 h-px bg-blue-100" />
             </div>
-            {!currentEvent ? (
-              <p className="text-gray-400 text-sm">No current event</p>
-            ) : !nextMovement ? (
-              <p className="text-gray-400 text-sm">No upcoming movements</p>
-            ) : (
-              <div>
-                <div className="flex items-start justify-between gap-2">
-                  <div className="min-w-0">
-                    <p className="text-sm font-semibold text-gray-800">
-                      {nextMovement.name}
-                    </p>
-                    <p className="text-xs text-gray-500 mt-0.5">
-                      {MODE_LABEL[nextMovement.mode]} ·{" "}
-                      {nextMovement.departureLocation} →{" "}
-                      {nextMovement.arrivalLocation}
-                    </p>
+          ) : (
+            <Link
+              href={`/movements/${nextMovement.id}`}
+              className="block bg-white rounded-2xl p-4 shadow-sm active:bg-gray-50"
+            >
+              <div className="flex items-center gap-2 mb-3">
+                <p className="text-sm font-semibold text-gray-800">Next movement</p>
+                <div className="flex-1 h-px bg-blue-100" />
+              </div>
+
+              {/* Name + mode pill */}
+              <p className="text-sm font-semibold text-gray-800 mb-1">
+                {nextMovement.name}
+              </p>
+              <span className="inline-block text-[11px] font-medium px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 mb-3">
+                {MODE_LABEL[nextMovement.mode]}
+              </span>
+
+              {/* Route visual */}
+              <div className="flex flex-col">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-3.5 flex justify-center">
+                    <div className="w-2.5 h-2.5 rounded-full border-2 border-gray-400 bg-white" />
                   </div>
-                  <span className="shrink-0 text-[10px] font-medium px-2 py-0.5 rounded-full bg-blue-50 text-blue-700">
-                    {MODE_LABEL[nextMovement.mode]}
-                  </span>
+                  <p className="text-sm text-gray-800">{nextMovement.departureLocation}</p>
                 </div>
-                <div className="flex items-center gap-4 mt-3 pt-3 border-t border-gray-50">
-                  <div>
-                    <p className="text-[10px] text-gray-400 uppercase tracking-wide">
-                      Departs
-                    </p>
-                    <p className="text-sm font-medium text-gray-800">
-                      {fmtDayTime(nextMovement.departureTime)}
-                    </p>
+                <div className="flex gap-2.5">
+                  <div className="w-3.5 flex justify-center">
+                    <div className="w-px h-4 bg-gray-200" />
                   </div>
-                  <div className="ml-auto text-right">
-                    <p className="text-[10px] text-gray-400 uppercase tracking-wide">
-                      Pax
-                    </p>
-                    <p className="text-sm font-medium text-gray-800">
-                      {nextMovement._count.movementManifestEntries}
-                    </p>
+                </div>
+                <div className="flex items-center gap-2.5">
+                  <div className="w-3.5 flex justify-center">
+                    <div className="w-2.5 h-2.5 rounded-full bg-gray-700" />
                   </div>
+                  <p className="text-sm text-gray-800">{nextMovement.arrivalLocation}</p>
                 </div>
               </div>
-            )}
-          </div>
+
+              {/* Footer */}
+              <div className="flex items-center mt-3 pt-3 border-t border-gray-50">
+                <div>
+                  <p className="text-[10px] text-gray-400 uppercase tracking-wide">Departs</p>
+                  <p className="text-sm font-medium text-gray-800">
+                    {fmtDayTime(nextMovement.departureTime)}
+                  </p>
+                </div>
+                <div className="ml-auto text-right">
+                  <p className="text-[10px] text-gray-400 uppercase tracking-wide">Pax</p>
+                  <p className="text-sm font-medium text-gray-800">
+                    {nextMovement._count.movementManifestEntries}
+                  </p>
+                </div>
+                <svg
+                  className="ml-2.5 text-gray-300 shrink-0"
+                  width="14" height="14" viewBox="0 0 24 24"
+                  fill="none" stroke="currentColor" strokeWidth="2.5"
+                  strokeLinecap="round" strokeLinejoin="round"
+                >
+                  <polyline points="9 18 15 12 9 6" />
+                </svg>
+              </div>
+            </Link>
+          )}
 
           {/* ── Hotels ─────────────────────────────────────────────────── */}
           <div className="bg-white rounded-2xl p-4 shadow-sm">
