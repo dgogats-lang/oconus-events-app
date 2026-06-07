@@ -2,8 +2,75 @@
 
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { MovementEntryStatus } from "@prisma/client";
+import { MovementEntryStatus, MovementMode } from "@prisma/client";
 import { revalidatePath } from "next/cache";
+
+export async function createMovement(data: {
+  eventId: string;
+  name: string;
+  mode: MovementMode;
+  departureLocation: string;
+  arrivalLocation: string;
+  departureTime: string; // ISO string (UTC)
+  arrivalTime?: string | null;
+  notes?: string | null;
+}): Promise<{ success: boolean; id?: string; error?: string }> {
+  const session = await auth();
+  if (!session?.user?.email) return { success: false, error: "Not authenticated" };
+  try {
+    const movement = await db.movement.create({
+      data: {
+        eventId: data.eventId,
+        name: data.name.trim(),
+        mode: data.mode,
+        departureLocation: data.departureLocation.trim(),
+        arrivalLocation: data.arrivalLocation.trim(),
+        departureTime: new Date(data.departureTime),
+        arrivalTime: data.arrivalTime ? new Date(data.arrivalTime) : null,
+        notes: data.notes?.trim() || null,
+      },
+    });
+    revalidatePath("/movements");
+    return { success: true, id: movement.id };
+  } catch {
+    return { success: false, error: "Failed to create movement" };
+  }
+}
+
+export async function updateMovement(
+  id: string,
+  data: {
+    name: string;
+    mode: MovementMode;
+    departureLocation: string;
+    arrivalLocation: string;
+    departureTime: string;
+    arrivalTime?: string | null;
+    notes?: string | null;
+  }
+): Promise<{ success: boolean; error?: string }> {
+  const session = await auth();
+  if (!session?.user?.email) return { success: false, error: "Not authenticated" };
+  try {
+    await db.movement.update({
+      where: { id },
+      data: {
+        name: data.name.trim(),
+        mode: data.mode,
+        departureLocation: data.departureLocation.trim(),
+        arrivalLocation: data.arrivalLocation.trim(),
+        departureTime: new Date(data.departureTime),
+        arrivalTime: data.arrivalTime ? new Date(data.arrivalTime) : null,
+        notes: data.notes?.trim() || null,
+      },
+    });
+    revalidatePath(`/movements/${id}`);
+    revalidatePath("/movements");
+    return { success: true };
+  } catch {
+    return { success: false, error: "Failed to update movement" };
+  }
+}
 
 export async function addToManifest(
   movementId: string,

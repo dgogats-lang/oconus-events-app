@@ -89,9 +89,21 @@ export default async function MovementsPage() {
 
   return (
     <div className="pb-24">
-      <div className="px-4 pt-6 pb-2">
-        <h1 className="text-xl font-semibold text-gray-900">Movements</h1>
-        <p className="text-xs text-gray-400 mt-0.5">{trip.name}</p>
+      <div className="px-4 pt-6 pb-2 flex items-start justify-between">
+        <div>
+          <h1 className="text-xl font-semibold text-gray-900">Movements</h1>
+          <p className="text-xs text-gray-400 mt-0.5">{trip.name}</p>
+        </div>
+        <Link
+          href="/movements/new"
+          className="mt-1 flex items-center gap-1.5 text-sm font-medium text-[#0C2340] bg-[#E8EDF2] rounded-full px-3 py-1.5"
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19" />
+            <line x1="5" y1="12" x2="19" y2="12" />
+          </svg>
+          Add
+        </Link>
       </div>
 
       {!hasAnyMovements ? (
