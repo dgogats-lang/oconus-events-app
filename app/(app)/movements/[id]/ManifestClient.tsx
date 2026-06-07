@@ -255,11 +255,28 @@ function ManifestRow({
 
 // ─── main export ─────────────────────────────────────────────────────────────
 
+function matchesSearch(entry: ManifestEntry, query: string): boolean {
+  if (!query) return true;
+  const q = query.toLowerCase().trim();
+  const { firstName, lastName, email, company } = entry.attendee;
+  const candidates = [
+    firstName,
+    lastName,
+    `${firstName} ${lastName}`,
+    `${lastName} ${firstName}`,
+    `${lastName}, ${firstName}`,
+    email ?? "",
+    company?.name ?? "",
+  ];
+  return candidates.some((c) => c.toLowerCase().includes(q));
+}
+
 export default function ManifestClient({
   movementId,
   entries,
 }: ManifestClientProps) {
   const [contactAttendee, setContactAttendee] = useState<AttendeeInfo | null>(null);
+  const [search, setSearch] = useState("");
 
   // Sort: pending first (alpha), checked-in after (alpha)
   const sorted = [...entries].sort((a, b) => {
@@ -268,6 +285,8 @@ export default function ManifestClient({
     if (aIn !== bIn) return aIn - bIn;
     return a.attendee.lastName.localeCompare(b.attendee.lastName);
   });
+
+  const filtered = sorted.filter((e) => matchesSearch(e, search));
 
   const total = entries.length;
   const checkedIn = entries.filter((e) => e.status === "CHECKED_IN").length;
@@ -291,19 +310,44 @@ export default function ManifestClient({
         )}
       </div>
 
+      {/* Search */}
+      <div className="relative mb-3">
+        <svg
+          className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-300 pointer-events-none"
+          width="15" height="15" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+        >
+          <circle cx="11" cy="11" r="8" />
+          <line x1="21" y1="21" x2="16.65" y2="16.65" />
+        </svg>
+        <input
+          type="search"
+          placeholder="Search name, email, company…"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="w-full bg-white rounded-xl pl-9 pr-4 py-2.5 text-sm text-gray-900 placeholder-gray-300 shadow-sm border-0 focus:outline-none focus:ring-2 focus:ring-[#0C2340]/20"
+        />
+      </div>
+
       <p className="text-xs text-gray-300 px-1 mb-2">
         Tap ○ to check in · Tap name for contact
       </p>
 
       <div className="bg-white rounded-2xl shadow-sm overflow-hidden divide-y divide-gray-50">
-        {sorted.map((entry) => (
-          <ManifestRow
-            key={entry.attendeeId}
-            entry={entry}
-            movementId={movementId}
-            onContactOpen={setContactAttendee}
-          />
-        ))}
+        {filtered.length === 0 ? (
+          <div className="px-4 py-8 text-center">
+            <p className="text-sm text-gray-400">No results for "{search}"</p>
+          </div>
+        ) : (
+          filtered.map((entry) => (
+            <ManifestRow
+              key={entry.attendeeId}
+              entry={entry}
+              movementId={movementId}
+              onContactOpen={setContactAttendee}
+            />
+          ))
+        )}
       </div>
 
       {/* Contact sheet */}
