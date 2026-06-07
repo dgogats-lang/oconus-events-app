@@ -1,5 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import SWRegistration from "./components/SWRegistration";
+import OfflineBanner from "./components/OfflineBanner";
 
 export const metadata: Metadata = {
   title: "Ops",
@@ -28,7 +30,11 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <SWRegistration />
+        <OfflineBanner />
+        {children}
+      </body>
     </html>
   );
 }

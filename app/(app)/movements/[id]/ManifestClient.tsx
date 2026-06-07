@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition, useRef, useCallback } from "react";
+import { useState, useTransition, useRef, useCallback, useEffect } from "react";
 import { MovementEntryStatus } from "@prisma/client";
 import {
   updateManifestEntry,
@@ -8,6 +8,58 @@ import {
   removeFromManifest,
   transferToMovement,
 } from "@/actions/movement";
+
+// ─── offline queue ────────────────────────────────────────────────────────────
+
+interface QueuedCheckIn {
+  movementId: string;
+  attendeeId: string;
+  status: MovementEntryStatus;
+  queuedAt: number;
+}
+
+const QUEUE_KEY = "checkin-queue";
+
+function readQueue(): QueuedCheckIn[] {
+  if (typeof window === "undefined") return [];
+  try {
+    return JSON.parse(localStorage.getItem(QUEUE_KEY) ?? "[]");
+  } catch {
+    return [];
+  }
+}
+
+function writeQueue(q: QueuedCheckIn[]) {
+  localStorage.setItem(QUEUE_KEY, JSON.stringify(q));
+}
+
+function enqueue(item: QueuedCheckIn) {
+  const q = readQueue().filter(
+    (x) => !(x.movementId === item.movementId && x.attendeeId === item.attendeeId)
+  );
+  writeQueue([...q, item]);
+}
+
+function dequeue(movementId: string, attendeeId: string) {
+  writeQueue(
+    readQueue().filter(
+      (x) => !(x.movementId === movementId && x.attendeeId === attendeeId)
+    )
+  );
+}
+
+async function flushQueue(movementId: string) {
+  if (!navigator.onLine) return;
+  const pending = readQueue().filter((x) => x.movementId === movementId);
+  for (const item of pending) {
+    try {
+      const result = await updateManifestEntry(item.movementId, item.attendeeId, item.status);
+      if (result.success) dequeue(item.movementId, item.attendeeId);
+    } catch {
+      // Leave in queue — will retry next flush
+    }
+  }
+}
 
 // ─── types ────────────────────────────────────────────────────────────────────
 
@@ -427,11 +479,32 @@ function ManifestRow({
 }) {
   const [status, setStatus] = useState<MovementEntryStatus>(entry.status);
   const [isPending, startTransition] = useTransition();
+  const [isQueued, setIsQueued] = useState(false);
+
+  // On mount: check if this entry has a queued action and apply optimistic state
+  useEffect(() => {
+    const q = readQueue().find(
+      (x) => x.movementId === movementId && x.attendeeId === entry.attendeeId
+    );
+    if (q) {
+      setStatus(q.status);
+      setIsQueued(true);
+    }
+  }, [movementId, entry.attendeeId]);
 
   const toggleCheckIn = useCallback(() => {
     const next: MovementEntryStatus =
       status === "CHECKED_IN" ? "PENDING" : "CHECKED_IN";
     setStatus(next);
+
+    if (!navigator.onLine) {
+      // Queue offline — will sync when back online
+      enqueue({ movementId, attendeeId: entry.attendeeId, status: next, queuedAt: Date.now() });
+      setIsQueued(true);
+      return;
+    }
+
+    setIsQueued(false);
     startTransition(async () => {
       const result = await updateManifestEntry(movementId, entry.attendeeId, next);
       if (!result.success) setStatus(status);
@@ -449,8 +522,8 @@ function ManifestRow({
         aria-label={isCheckedIn ? "Uncheck" : "Check in"}
         className="shrink-0 w-7 h-7 rounded-full border-2 flex items-center justify-center transition-colors disabled:opacity-50 focus:outline-none active:scale-95"
         style={{
-          borderColor: isCheckedIn ? "#0C2340" : undefined,
-          backgroundColor: isCheckedIn ? "#0C2340" : undefined,
+          borderColor: isCheckedIn ? (isQueued ? "#F59E0B" : "#0C2340") : undefined,
+          backgroundColor: isCheckedIn ? (isQueued ? "#F59E0B" : "#0C2340") : undefined,
         }}
       >
         {isPending ? (
@@ -502,6 +575,15 @@ export default function ManifestClient({
   otherMovements,
 }: ManifestClientProps) {
   const [search, setSearch] = useState("");
+
+  // Flush queued check-ins when component mounts (online) or when connectivity returns
+  useEffect(() => {
+    flushQueue(movementId);
+
+    const handleOnline = () => flushQueue(movementId);
+    window.addEventListener("online", handleOnline);
+    return () => window.removeEventListener("online", handleOnline);
+  }, [movementId]);
   const [contactAttendee, setContactAttendee] = useState<AttendeeInfo | null>(null);
   const [showAddSheet, setShowAddSheet] = useState(false);
   const [transferAttendee, setTransferAttendee] = useState<AttendeeInfo | null>(null);
