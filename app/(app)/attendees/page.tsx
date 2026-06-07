@@ -37,14 +37,8 @@ async function getAttendeesData(
             ],
           }
         : {}),
-      ...(filters.length > 0
-        ? {
-            OR: [
-              ...(filters.includes("dod") ? [{ hasDodId: true }] : []),
-              ...(filters.includes("travel") ? [{ travelPackage: true }] : []),
-            ],
-          }
-        : {}),
+      ...(filters.includes("dod") ? { hasDodId: true } : {}),
+      ...(filters.includes("travel") ? { travelPackage: true } : {}),
       ...(eventId
         ? { eventRegistrations: { some: { eventId } } }
         : {}),
