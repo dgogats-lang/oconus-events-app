@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { MovementMode, MovementEntryStatus } from "@prisma/client";
 import NotesEditor from "./NotesEditor";
+import AttendeeHotelsClient, { type HotelStop } from "./AttendeeHotelsClient";
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
@@ -62,6 +63,7 @@ async function getAttendee(id: string) {
         include: {
           hotel: {
             select: {
+              id: true,
               name: true,
               address: true,
               phone: true,
@@ -119,7 +121,7 @@ export default async function AttendeeProfilePage({
       .filter((e) => e.hotel.event)
       .map((e) => [
         e.hotel.event!.id,
-        { name: e.hotel.name, roomNumber: e.roomNumber },
+        { hotelId: e.hotel.id, name: e.hotel.name, roomNumber: e.roomNumber },
       ])
   );
   const movementCountByEvent = new Map<string, number>();
@@ -136,6 +138,71 @@ export default async function AttendeeProfilePage({
     hotel: hotelByEvent.get(reg.event.id) ?? null,
     movementCount: movementCountByEvent.get(reg.event.id) ?? 0,
   }));
+
+  // ── Fetch hotel availability for assignment UI ───────────────────────────
+  const registeredEventIds = attendee.eventRegistrations.map((r) => r.event.id);
+
+  const [allEventHotels, transitHotels] = await Promise.all([
+    registeredEventIds.length > 0
+      ? db.hotel.findMany({
+          where: { eventId: { in: registeredEventIds } },
+          select: { id: true, name: true, eventId: true },
+        })
+      : Promise.resolve([]),
+    attendee.tripId
+      ? db.hotel.findMany({
+          where: { tripId: attendee.tripId, eventId: null },
+          select: { id: true, name: true },
+          orderBy: { createdAt: "asc" },
+        })
+      : Promise.resolve([]),
+  ]);
+
+  // Sets for quick transit lookup
+  const assignedTransitIds = new Set(
+    attendee.hotelManifestEntries
+      .filter((e) => !e.hotel.eventId)
+      .map((e) => e.hotel.id)
+  );
+  const transitRoomNumbers = new Map(
+    attendee.hotelManifestEntries
+      .filter((e) => !e.hotel.eventId)
+      .map((e) => [e.hotel.id, e.roomNumber])
+  );
+
+  // ── Build profileHotelStops ───────────────────────────────────────────────
+  const profileHotelStops: HotelStop[] = [];
+
+  for (const reg of attendee.eventRegistrations) {
+    const assigned = hotelByEvent.get(reg.event.id) ?? null;
+    const hotelsAtStop = allEventHotels.filter((h) => h.eventId === reg.event.id);
+    const available = assigned
+      ? hotelsAtStop.filter((h) => h.id !== assigned.hotelId)
+      : hotelsAtStop;
+
+    profileHotelStops.push({
+      label: `${reg.event.name} · ${reg.event.city}`,
+      hotelId: assigned?.hotelId ?? null,
+      hotelName: assigned?.name ?? null,
+      roomNumber: assigned?.roomNumber ?? null,
+      isGap: attendee.travelPackage && !assigned,
+      availableHotels: available.map((h) => ({ id: h.id, name: h.name })),
+    });
+  }
+
+  for (const hotel of transitHotels) {
+    const isAssigned = assignedTransitIds.has(hotel.id);
+    if (!isAssigned && !attendee.travelPackage) continue;
+
+    profileHotelStops.push({
+      label: "Transit",
+      hotelId: isAssigned ? hotel.id : null,
+      hotelName: hotel.name,
+      roomNumber: transitRoomNumbers.get(hotel.id) ?? null,
+      isGap: attendee.travelPackage && !isAssigned,
+      availableHotels: isAssigned ? [] : [{ id: hotel.id, name: hotel.name }],
+    });
+  }
 
   return (
     <div className="pb-24">
@@ -343,28 +410,11 @@ export default async function AttendeeProfilePage({
         </div>
 
         {/* ── Hotels ──────────────────────────────────────────────────────── */}
-        {attendee.hotelManifestEntries.length > 0 && (
-          <div className="bg-white rounded-2xl shadow-sm p-4">
-            <p className="text-sm font-semibold text-gray-800 mb-3">Hotels</p>
-            <div className="space-y-3">
-              {attendee.hotelManifestEntries.map((entry) => (
-                <div key={entry.id}>
-                  <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-0.5">
-                    {entry.hotel.event
-                      ? `${entry.hotel.event.name}, ${entry.hotel.event.city}`
-                      : "Transit"}
-                  </p>
-                  <p className="text-sm font-medium text-gray-800">
-                    {entry.hotel.name}
-                  </p>
-                  <p className="text-xs text-gray-400">
-                    {entry.roomNumber ? `Room ${entry.roomNumber}` : "No room assigned"}
-                    {entry.hotel.address ? ` · ${entry.hotel.address}` : ""}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </div>
+        {profileHotelStops.length > 0 && (
+          <AttendeeHotelsClient
+            attendeeId={attendee.id}
+            stops={profileHotelStops}
+          />
         )}
 
         {/* ── Movements ───────────────────────────────────────────────────── */}
