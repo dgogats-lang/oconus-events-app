@@ -54,7 +54,7 @@ async function getMovement(id: string) {
               company: { select: { name: true } },
               hotelManifestEntries: {
                 // Hotel for this specific event stop
-                where: { eventId: id }, // will be replaced below
+                where: { hotel: { eventId: id } }, // will be replaced below
                 include: { hotel: { select: { name: true } } },
                 take: 1,
               },
@@ -103,7 +103,7 @@ export default async function MovementManifestPage({
               phone: true,
               company: { select: { name: true } },
               hotelManifestEntries: {
-                where: { eventId: movementRaw.eventId },
+                where: { hotel: { eventId: movementRaw.eventId } },
                 include: { hotel: { select: { name: true } } },
                 take: 1,
               },

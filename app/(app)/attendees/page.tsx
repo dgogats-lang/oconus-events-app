@@ -46,7 +46,7 @@ async function getAttendeesData(
     include: {
       company: { select: { name: true } },
       hotelManifestEntries: {
-        where: { eventId: currentEvent?.id ?? "" },
+        where: currentEvent ? { hotel: { eventId: currentEvent.id } } : { id: "" },
         include: { hotel: { select: { name: true } } },
         take: 1,
       },

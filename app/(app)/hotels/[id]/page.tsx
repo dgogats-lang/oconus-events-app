@@ -94,7 +94,7 @@ export default async function HotelDetailPage({
       {/* Header */}
       <div className="px-4 pt-4 pb-5">
         <p className="text-xs text-gray-400 mb-1">
-          {hotel.event.name} · {hotel.event.city}
+          {hotel.event ? `${hotel.event.name} · ${hotel.event.city}` : "Transit"}
         </p>
         <h1 className="text-xl font-bold text-gray-900 leading-snug">
           {hotel.name}

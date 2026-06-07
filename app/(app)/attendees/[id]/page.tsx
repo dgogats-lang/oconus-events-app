@@ -60,8 +60,15 @@ async function getAttendee(id: string) {
       },
       hotelManifestEntries: {
         include: {
-          hotel: { select: { name: true, address: true, phone: true } },
-          event: { select: { id: true, name: true, city: true, date: true } },
+          hotel: {
+            select: {
+              name: true,
+              address: true,
+              phone: true,
+              eventId: true,
+              event: { select: { id: true, name: true, city: true, date: true } },
+            },
+          },
         },
         orderBy: { createdAt: "asc" },
       },
@@ -108,10 +115,12 @@ export default async function AttendeeProfilePage({
 
   // ── Build per-event summary (EventRegistration is source of truth) ────────
   const hotelByEvent = new Map(
-    attendee.hotelManifestEntries.map((e) => [
-      e.event.id,
-      { name: e.hotel.name, roomNumber: e.roomNumber },
-    ])
+    attendee.hotelManifestEntries
+      .filter((e) => e.hotel.event)
+      .map((e) => [
+        e.hotel.event!.id,
+        { name: e.hotel.name, roomNumber: e.roomNumber },
+      ])
   );
   const movementCountByEvent = new Map<string, number>();
   for (const entry of attendee.movementManifestEntries) {
@@ -341,7 +350,9 @@ export default async function AttendeeProfilePage({
               {attendee.hotelManifestEntries.map((entry) => (
                 <div key={entry.id}>
                   <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-0.5">
-                    {entry.event.name}, {entry.event.city}
+                    {entry.hotel.event
+                      ? `${entry.hotel.event.name}, ${entry.hotel.event.city}`
+                      : "Transit"}
                   </p>
                   <p className="text-sm font-medium text-gray-800">
                     {entry.hotel.name}

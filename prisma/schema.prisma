@@ -85,6 +85,7 @@ model Trip {
 
   events    Event[]
   attendees Attendee[]
+  hotels    Hotel[]    // transit hotels not tied to a specific event
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -100,11 +101,10 @@ model Event {
   date     DateTime
   timezone String   @default("UTC")
 
-  trip                 Trip                 @relation(fields: [tripId], references: [id], onDelete: Cascade)
-  eventRegistrations   EventRegistration[]
-  hotels               Hotel[]
-  movements            Movement[]
-  hotelManifestEntries HotelManifestEntry[]
+  trip               Trip                @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  eventRegistrations EventRegistration[]
+  hotels             Hotel[]
+  movements          Movement[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -180,28 +180,31 @@ model EventRegistration {
   @@index([eventId])
 }
 
-// A hotel for a specific Event stop
+// A hotel for an Event stop or a transit stop between events.
+// Exactly one of eventId or tripId must be set.
 model Hotel {
   id      String  @id @default(cuid())
-  eventId String
+  eventId String? // null for transit hotels
+  tripId  String? // set for transit hotels; also set for event hotels (denormalized for easy querying)
   name    String
   address String?
   phone   String?
   notes   String?
 
-  event                Event                @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  event                Event?               @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  trip                 Trip?                @relation(fields: [tripId], references: [id], onDelete: Cascade)
   hotelManifestEntries HotelManifestEntry[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([eventId])
+  @@index([tripId])
 }
 
-// Links an Attendee to a Hotel for an Event stop
+// Links an Attendee to a Hotel. Event context is available through hotel.eventId.
 model HotelManifestEntry {
   id         String    @id @default(cuid())
-  eventId    String
   attendeeId String
   hotelId    String
   roomNumber String?
@@ -209,16 +212,15 @@ model HotelManifestEntry {
   checkOut   DateTime?
   notes      String?
 
-  event    Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
   attendee Attendee @relation(fields: [attendeeId], references: [id], onDelete: Cascade)
   hotel    Hotel    @relation(fields: [hotelId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@unique([eventId, attendeeId])
-  @@index([eventId])
+  @@unique([hotelId, attendeeId])
   @@index([attendeeId])
+  @@index([hotelId])
 }
 
 // Any ops-managed A→B transfer (bus, car, flight, or other)

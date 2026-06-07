@@ -5,7 +5,8 @@ import { db } from "@/lib/db";
 import { revalidatePath } from "next/cache";
 
 export async function createHotel(data: {
-  eventId: string;
+  eventId?: string | null; // null for transit hotels
+  tripId: string;          // always required — denormalized for easy querying
   name: string;
   address?: string | null;
   phone?: string | null;
@@ -13,14 +14,16 @@ export async function createHotel(data: {
 }): Promise<{ success: boolean; id?: string; error?: string }> {
   const session = await auth();
   if (!session?.user?.email) return { success: false, error: "Not authenticated" };
+  if (!data.eventId && !data.tripId) return { success: false, error: "Hotel must belong to an event or trip." };
   try {
     const hotel = await db.hotel.create({
       data: {
-        eventId: data.eventId,
-        name: data.name.trim(),
+        eventId: data.eventId || null,
+        tripId:  data.tripId,
+        name:    data.name.trim(),
         address: data.address?.trim() || null,
-        phone: data.phone?.trim() || null,
-        notes: data.notes?.trim() || null,
+        phone:   data.phone?.trim() || null,
+        notes:   data.notes?.trim() || null,
       },
     });
     revalidatePath("/hotels");
@@ -33,7 +36,8 @@ export async function createHotel(data: {
 export async function updateHotel(
   id: string,
   data: {
-    eventId: string;
+    eventId?: string | null;
+    tripId: string;
     name: string;
     address?: string | null;
     phone?: string | null;
@@ -42,15 +46,17 @@ export async function updateHotel(
 ): Promise<{ success: boolean; error?: string }> {
   const session = await auth();
   if (!session?.user?.email) return { success: false, error: "Not authenticated" };
+  if (!data.eventId && !data.tripId) return { success: false, error: "Hotel must belong to an event or trip." };
   try {
     await db.hotel.update({
       where: { id },
       data: {
-        eventId: data.eventId,
-        name: data.name.trim(),
+        eventId: data.eventId || null,
+        tripId:  data.tripId,
+        name:    data.name.trim(),
         address: data.address?.trim() || null,
-        phone: data.phone?.trim() || null,
-        notes: data.notes?.trim() || null,
+        phone:   data.phone?.trim() || null,
+        notes:   data.notes?.trim() || null,
       },
     });
     revalidatePath("/hotels");

@@ -4,30 +4,27 @@ import { notFound } from "next/navigation";
 import HotelForm from "../../HotelForm";
 
 async function getHotelAndEvents(id: string) {
-  const [hotel, trip] = await Promise.all([
-    db.hotel.findUnique({
-      where: { id },
-      select: {
-        id: true,
-        eventId: true,
-        name: true,
-        address: true,
-        phone: true,
-        notes: true,
-      },
-    }),
-    db.trip.findFirst({ where: { isActive: true } }),
-  ]);
+  const hotel = await db.hotel.findUnique({
+    where: { id },
+    select: { id: true, eventId: true, tripId: true, name: true, address: true, phone: true, notes: true },
+  });
+  if (!hotel) return null;
 
-  if (!hotel || !trip) return null;
+  // Resolve tripId — may be on the hotel directly, or via its event
+  const tripId = hotel.tripId ?? (
+    hotel.eventId
+      ? (await db.event.findUnique({ where: { id: hotel.eventId }, select: { tripId: true } }))?.tripId
+      : null
+  );
+  if (!tripId) return null;
 
   const events = await db.event.findMany({
-    where: { tripId: trip.id },
+    where: { tripId },
     select: { id: true, name: true, city: true },
     orderBy: { date: "asc" },
   });
 
-  return { hotel, events };
+  return { hotel, tripId, events };
 }
 
 export default async function EditHotelPage({
@@ -43,9 +40,11 @@ export default async function EditHotelPage({
   return (
     <HotelForm
       events={data.events}
+      tripId={data.tripId}
       hotelId={id}
       initialValues={{
         eventId: data.hotel.eventId,
+        tripId: data.tripId,
         name: data.hotel.name,
         address: data.hotel.address,
         phone: data.hotel.phone,

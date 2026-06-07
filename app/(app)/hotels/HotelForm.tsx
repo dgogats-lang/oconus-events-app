@@ -12,7 +12,8 @@ interface EventOption {
 }
 
 interface InitialValues {
-  eventId: string;
+  eventId?: string | null;
+  tripId: string;
   name: string;
   address?: string | null;
   phone?: string | null;
@@ -21,6 +22,7 @@ interface InitialValues {
 
 interface HotelFormProps {
   events: EventOption[];
+  tripId: string;
   initialValues?: InitialValues;
   hotelId?: string;
   backHref: string;
@@ -28,6 +30,7 @@ interface HotelFormProps {
 
 export default function HotelForm({
   events,
+  tripId,
   initialValues,
   hotelId,
   backHref,
@@ -35,7 +38,8 @@ export default function HotelForm({
   const router = useRouter();
   const isEdit = !!hotelId;
 
-  const [eventId, setEventId] = useState(initialValues?.eventId ?? "");
+  // "transit" is a sentinel value meaning no event (trip-level hotel)
+  const [eventId, setEventId] = useState(initialValues?.eventId ?? "transit");
   const [name, setName]       = useState(initialValues?.name ?? "");
   const [address, setAddress] = useState(initialValues?.address ?? "");
   const [phone, setPhone]     = useState(initialValues?.phone ?? "");
@@ -43,6 +47,7 @@ export default function HotelForm({
   const [error, setError]     = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
+  const isTransit = eventId === "transit";
   const selectedEvent = events.find((e) => e.id === eventId);
 
   function handleSubmit(e: React.FormEvent) {
@@ -52,7 +57,8 @@ export default function HotelForm({
     setError(null);
 
     const payload = {
-      eventId,
+      eventId: eventId === "transit" ? null : eventId,
+      tripId,
       name: name.trim(),
       address: address.trim() || null,
       phone: phone.trim() || null,
@@ -125,8 +131,8 @@ export default function HotelForm({
             <div className="flex items-center px-4 py-3.5 relative">
               <span className="text-sm text-gray-700 w-24 shrink-0">Event</span>
               <div className="flex-1 flex items-center justify-end gap-1 min-w-0">
-                <span className={`text-sm truncate ${eventId ? "text-gray-900" : "text-gray-300"}`}>
-                  {selectedEvent ? `${selectedEvent.name} — ${selectedEvent.city}` : "Select event"}
+                <span className="text-sm truncate text-gray-900">
+                  {isTransit ? "Transit (no event)" : selectedEvent ? `${selectedEvent.name} — ${selectedEvent.city}` : "Select event"}
                 </span>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-300 shrink-0">
                   <polyline points="9 18 15 12 9 6" />
@@ -137,7 +143,7 @@ export default function HotelForm({
                 onChange={(e) => setEventId(e.target.value)}
                 className="absolute inset-0 opacity-0 cursor-pointer w-full"
               >
-                <option value="">Select event</option>
+                <option value="transit">Transit (no event)</option>
                 {events.map((ev) => (
                   <option key={ev.id} value={ev.id}>
                     {ev.name} — {ev.city}
