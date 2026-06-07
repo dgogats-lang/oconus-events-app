@@ -393,92 +393,105 @@ export default async function TodayPage() {
           ) : (
             <Link
               href={`/movements/${nextMovement.id}`}
-              className="block bg-white rounded-2xl p-4 shadow-sm active:bg-gray-50"
+              className="block rounded-2xl shadow-sm overflow-hidden active:opacity-90"
             >
-              <div className="flex items-center gap-2 mb-3">
-                <p className="text-sm font-semibold text-gray-800">Next movement</p>
-                <div className="flex-1 h-px bg-blue-100" />
-              </div>
+              {/* ── Dark header ── */}
+              <div className="bg-[#0C2340] px-4 pt-3.5 pb-4">
 
-              {/* Name + mode pill on same line */}
-              <div className="flex items-center gap-2 mb-3 flex-wrap">
-                <p className="text-sm font-semibold text-gray-800">
+                {/* Label row: "Next movement" + combined mode|pax pill */}
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-[10px] font-semibold text-blue-300 uppercase tracking-wider">
+                    Next movement
+                  </span>
+                  <div className="flex items-center rounded-full overflow-hidden" style={{background: "rgba(255,255,255,0.12)"}}>
+                    <span className="text-[10px] font-semibold text-blue-200 px-2.5 py-1 border-r" style={{borderColor: "rgba(255,255,255,0.15)"}}>
+                      {MODE_LABEL[nextMovement.mode]}
+                    </span>
+                    <span className="text-[10px] font-semibold text-blue-200 px-2.5 py-1 flex items-center gap-1">
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                      </svg>
+                      {nextMovement._count.movementManifestEntries} pax
+                    </span>
+                  </div>
+                </div>
+
+                {/* Movement name */}
+                <p className="text-[15px] font-semibold text-white mb-3 leading-snug">
                   {nextMovement.name}
                 </p>
-                <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 shrink-0">
-                  {MODE_LABEL[nextMovement.mode]}
-                </span>
-              </div>
 
-              {/* Meet callout */}
-              {(nextMovement.meetTime || nextMovement.meetLocation) && (
-                <div className="mb-3 bg-blue-50 rounded-xl px-3 py-2 flex items-center gap-2">
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-500 shrink-0">
-                    <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
-                  </svg>
-                  <div className="flex items-center gap-1.5 min-w-0">
-                    <span className="text-[10px] font-semibold text-blue-500 uppercase tracking-wide shrink-0">Meet</span>
-                    {nextMovement.meetLocation && (
-                      <span className="text-xs text-blue-900 font-medium truncate">{nextMovement.meetLocation}</span>
-                    )}
-                    {nextMovement.meetTime && (
-                      <span className="text-xs text-blue-700 shrink-0">{fmtTime(nextMovement.meetTime)}</span>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* Route visual */}
-              <div className="flex flex-col">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-3.5 flex justify-center">
-                    <div className="w-2.5 h-2.5 rounded-full border-2 border-gray-400 bg-white" />
-                  </div>
-                  <p className="text-sm text-gray-800">{nextMovement.departureLocation}</p>
-                </div>
-                <div className="flex gap-2.5">
-                  <div className="w-3.5 flex justify-center">
-                    <div className="w-px h-4 bg-gray-200" />
-                  </div>
-                </div>
-                <div className="flex items-center gap-2.5">
-                  <div className="w-3.5 flex justify-center">
-                    <div className="w-2.5 h-2.5 rounded-full bg-gray-700" />
-                  </div>
-                  <p className="text-sm text-gray-800">{nextMovement.arrivalLocation}</p>
-                </div>
-              </div>
-
-              {/* Footer */}
-              <div className="flex items-center mt-3 pt-3 border-t border-gray-50">
-                <div>
-                  <p className="text-[10px] text-gray-400 uppercase tracking-wide">Departs</p>
-                  <p className="text-sm font-medium text-gray-800">
-                    {fmtDayTime(nextMovement.departureTime)}
-                  </p>
-                </div>
-                {fmtDuration(nextMovement.departureTime, nextMovement.arrivalTime) && (
-                  <div className="mx-auto text-center">
-                    <p className="text-[10px] text-gray-400 uppercase tracking-wide">Duration</p>
-                    <p className="text-sm font-medium text-gray-800">
-                      {fmtDuration(nextMovement.departureTime, nextMovement.arrivalTime)}
+                {/* Stat columns: Meet · Departs · Duration */}
+                <div className="flex items-start gap-4">
+                  {(nextMovement.meetTime || nextMovement.meetLocation) ? (
+                    <>
+                      <div className="shrink-0">
+                        <p className="text-[10px] font-semibold text-blue-300 uppercase tracking-wider mb-1">Meet</p>
+                        <p className="text-[22px] font-semibold text-white leading-none">
+                          {nextMovement.meetTime ? fmtTime(nextMovement.meetTime) : "—"}
+                        </p>
+                        {nextMovement.meetLocation && (
+                          <p className="text-[11px] text-blue-300 mt-0.5">{nextMovement.meetLocation}</p>
+                        )}
+                      </div>
+                      <div className="w-px self-stretch mt-1" style={{background: "rgba(255,255,255,0.15)"}} />
+                    </>
+                  ) : null}
+                  <div className="shrink-0">
+                    <p className="text-[10px] font-semibold text-blue-300 uppercase tracking-wider mb-1">Departs</p>
+                    <p className="text-[22px] font-semibold text-white leading-none">
+                      {fmtTime(nextMovement.departureTime)}
+                    </p>
+                    <p className="text-[11px] text-blue-300 mt-0.5">
+                      {nextMovement.departureTime.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}
                     </p>
                   </div>
-                )}
-                <div className="ml-auto text-right">
-                  <p className="text-[10px] text-gray-400 uppercase tracking-wide">Pax</p>
-                  <p className="text-sm font-medium text-gray-800">
-                    {nextMovement._count.movementManifestEntries}
-                  </p>
+                  {fmtDuration(nextMovement.departureTime, nextMovement.arrivalTime) && (
+                    <>
+                      <div className="w-px self-stretch mt-1" style={{background: "rgba(255,255,255,0.15)"}} />
+                      <div className="shrink-0">
+                        <p className="text-[10px] font-semibold text-blue-300 uppercase tracking-wider mb-1">Duration</p>
+                        <p className="text-[22px] font-semibold text-white leading-none">
+                          {fmtDuration(nextMovement.departureTime, nextMovement.arrivalTime)}
+                        </p>
+                      </div>
+                    </>
+                  )}
                 </div>
-                <svg
-                  className="ml-2.5 text-gray-300 shrink-0"
-                  width="14" height="14" viewBox="0 0 24 24"
-                  fill="none" stroke="currentColor" strokeWidth="2.5"
-                  strokeLinecap="round" strokeLinejoin="round"
-                >
-                  <polyline points="9 18 15 12 9 6" />
-                </svg>
+              </div>
+
+              {/* ── White lower section ── */}
+              <div className="bg-white px-4 pt-3 pb-3.5">
+                {/* Route with inline times */}
+                <div className="flex flex-col">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 rounded-full border-2 border-gray-400 bg-white shrink-0" />
+                      <p className="text-sm text-gray-800">{nextMovement.departureLocation}</p>
+                    </div>
+                    <p className="text-xs text-gray-400 shrink-0">{fmtTime(nextMovement.departureTime)}</p>
+                  </div>
+                  <div className="flex gap-2 py-0.5 ml-[3px]">
+                    <div className="w-px h-4 bg-gray-200 ml-[3px]" />
+                  </div>
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 rounded-full bg-gray-700 shrink-0" />
+                      <p className="text-sm text-gray-800">{nextMovement.arrivalLocation}</p>
+                    </div>
+                    {nextMovement.arrivalTime && (
+                      <p className="text-xs text-gray-400 shrink-0">{fmtTime(nextMovement.arrivalTime)}</p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Notes */}
+                {nextMovement.notes && (
+                  <div className="mt-2.5 bg-amber-50 rounded-xl px-3 py-2">
+                    <p className="text-xs text-amber-800 leading-relaxed">{nextMovement.notes}</p>
+                  </div>
+                )}
               </div>
             </Link>
           )}
