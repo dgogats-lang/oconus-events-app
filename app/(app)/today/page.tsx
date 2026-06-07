@@ -12,6 +12,14 @@ function endOfDay(d: Date) {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59, 999);
 }
 
+// Returns a Date whose UTC value equals the current wall-clock time in the
+// given IANA timezone. Used to compare against dumb-local stored times.
+function localNow(timezone: string): Date {
+  // sv-SE locale produces "YYYY-MM-DD HH:MM:SS" — parse as UTC to get dumb-local
+  const s = new Date().toLocaleString("sv-SE", { timeZone: timezone });
+  return new Date(s.replace(" ", "T") + ".000Z");
+}
+
 const MODE_LABEL: Record<MovementMode, string> = {
   BUS: "Bus",
   CAR: "Car",
@@ -163,11 +171,13 @@ async function getTodayData() {
       : null;
 
   // 6. Next movement for current event
+  // Use localNow so the comparison is against wall-clock time at the event
+  // location, not UTC (movement times are stored as dumb-local).
   const nextMovement = currentEvent
     ? await db.movement.findFirst({
         where: {
           eventId: currentEvent.id,
-          departureTime: { gte: now },
+          departureTime: { gte: localNow(currentEvent.timezone) },
         },
         include: {
           _count: { select: { movementManifestEntries: true } },

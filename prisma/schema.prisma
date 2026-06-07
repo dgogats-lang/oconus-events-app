@@ -98,6 +98,7 @@ model Event {
   city     String
   country  String
   date     DateTime
+  timezone String   @default("UTC")
 
   trip                 Trip                 @relation(fields: [tripId], references: [id], onDelete: Cascade)
   eventRegistrations   EventRegistration[]

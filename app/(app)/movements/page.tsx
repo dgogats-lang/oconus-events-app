@@ -29,17 +29,24 @@ function fmtDateShort(d: Date) {
   return d.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
 }
 
-function isToday(d: Date) {
-  const now = new Date();
+// Returns a Date whose UTC value equals the current wall-clock time in the
+// given IANA timezone. Used to compare against dumb-local stored times.
+function localNow(timezone: string): Date {
+  const s = new Date().toLocaleString("sv-SE", { timeZone: timezone });
+  return new Date(s.replace(" ", "T") + ".000Z");
+}
+
+function isToday(d: Date, timezone: string) {
+  const ln = localNow(timezone);
   return (
-    d.getFullYear() === now.getFullYear() &&
-    d.getMonth() === now.getMonth() &&
-    d.getDate() === now.getDate()
+    d.getFullYear() === ln.getFullYear() &&
+    d.getMonth() === ln.getMonth() &&
+    d.getDate() === ln.getDate()
   );
 }
 
-function isPast(d: Date) {
-  return d < new Date();
+function isPast(d: Date, timezone: string) {
+  return d < localNow(timezone);
 }
 
 // ─── data fetching ────────────────────────────────────────────────────────────
@@ -136,8 +143,8 @@ export default async function MovementsPage() {
                       (e) => e.status === "CHECKED_IN"
                     ).length;
                     const allDone = total > 0 && checkedIn === total;
-                    const departing = isPast(movement.departureTime);
-                    const todayMovement = isToday(movement.departureTime);
+                    const departing = isPast(movement.departureTime, event.timezone);
+                    const todayMovement = isToday(movement.departureTime, event.timezone);
 
                     return (
                       <Link

@@ -50,13 +50,13 @@ async function main() {
   today.setHours(0, 0, 0, 0);
 
   const munich = await db.event.create({
-    data: { tripId: trip.id, name: "Munich Summit",  city: "Munich", country: "Germany",        date: today },
+    data: { tripId: trip.id, name: "Munich Summit",  city: "Munich", country: "Germany",        date: today, timezone: "Europe/Berlin" },
   });
   const warsaw = await db.event.create({
-    data: { tripId: trip.id, name: "Warsaw Summit",  city: "Warsaw", country: "Poland",         date: new Date(today.getTime() + 4 * 24 * 60 * 60 * 1000) },
+    data: { tripId: trip.id, name: "Warsaw Summit",  city: "Warsaw", country: "Poland",         date: new Date(today.getTime() + 4 * 24 * 60 * 60 * 1000), timezone: "Europe/Warsaw" },
   });
   const london = await db.event.create({
-    data: { tripId: trip.id, name: "London Summit",  city: "London", country: "United Kingdom", date: new Date(today.getTime() + 8 * 24 * 60 * 60 * 1000) },
+    data: { tripId: trip.id, name: "London Summit",  city: "London", country: "United Kingdom", date: new Date(today.getTime() + 8 * 24 * 60 * 60 * 1000), timezone: "Europe/London" },
   });
   console.log("  ✓ Events (Munich today, Warsaw +4d, London +8d)");
 

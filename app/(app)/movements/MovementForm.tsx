@@ -34,17 +34,15 @@ interface MovementFormProps {
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
+// Read date/time from a dumb-local ISO string (stored as UTC but meaning local time).
+// We pull directly from the string rather than using Date methods, which would
+// apply the browser's timezone offset and show the wrong value.
 function toLocalDate(iso: string): string {
-  const d = new Date(iso);
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
+  return iso.substring(0, 10); // "YYYY-MM-DD"
 }
 
 function toLocalTime(iso: string): string {
-  const d = new Date(iso);
-  return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+  return iso.substring(11, 16); // "HH:MM"
 }
 
 // ─── mode config ──────────────────────────────────────────────────────────────
@@ -85,19 +83,22 @@ export default function MovementForm({
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!isEdit && !eventId)             { setError("Please select an event."); return; }
+    if (!eventId)                         { setError("Please select an event."); return; }
     if (!name.trim())                    { setError("Please enter a movement name."); return; }
     if (!depLocation.trim())             { setError("Please enter a departure location."); return; }
     if (!arrLocation.trim())             { setError("Please enter an arrival location."); return; }
     if (!depDate || !depTime)            { setError("Please enter a departure date and time."); return; }
     setError(null);
 
-    const departureTimeISO = new Date(depDate + "T" + depTime).toISOString();
-    const arrivalTimeISO   = arrDate && arrTime ? new Date(arrDate + "T" + arrTime).toISOString() : null;
+    // Construct as a dumb-local UTC string — "5:23 PM" is stored as 17:23Z,
+    // meaning it regardless of what timezone the browser is in.
+    const departureTimeISO = `${depDate}T${depTime}:00.000Z`;
+    const arrivalTimeISO   = arrDate && arrTime ? `${arrDate}T${arrTime}:00.000Z` : null;
 
     startTransition(async () => {
       if (isEdit) {
         const result = await updateMovement(movementId, {
+          eventId,
           name: name.trim(),
           mode,
           departureLocation: depLocation.trim(),
@@ -174,32 +175,30 @@ export default function MovementForm({
           </p>
           <div className="bg-white rounded-2xl shadow-sm overflow-hidden divide-y divide-gray-50">
 
-            {/* Event selector (create only) */}
-            {!isEdit && (
-              <div className="flex items-center px-4 py-3.5 relative">
-                <span className="text-sm text-gray-700 w-24 shrink-0">Event</span>
-                <div className="flex-1 flex items-center justify-end gap-1 min-w-0">
-                  <span className={`text-sm truncate ${eventId ? "text-gray-900" : "text-gray-300"}`}>
-                    {selectedEvent ? `${selectedEvent.name} — ${selectedEvent.city}` : "Select event"}
-                  </span>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-300 shrink-0">
-                    <polyline points="9 18 15 12 9 6" />
-                  </svg>
-                </div>
-                <select
-                  value={eventId}
-                  onChange={(e) => setEventId(e.target.value)}
-                  className="absolute inset-0 opacity-0 cursor-pointer w-full"
-                >
-                  <option value="">Select event</option>
-                  {events.map((ev) => (
-                    <option key={ev.id} value={ev.id}>
-                      {ev.name} — {ev.city}
-                    </option>
-                  ))}
-                </select>
+            {/* Event selector */}
+            <div className="flex items-center px-4 py-3.5 relative">
+              <span className="text-sm text-gray-700 w-24 shrink-0">Event</span>
+              <div className="flex-1 flex items-center justify-end gap-1 min-w-0">
+                <span className={`text-sm truncate ${eventId ? "text-gray-900" : "text-gray-300"}`}>
+                  {selectedEvent ? `${selectedEvent.name} — ${selectedEvent.city}` : "Select event"}
+                </span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-300 shrink-0">
+                  <polyline points="9 18 15 12 9 6" />
+                </svg>
               </div>
-            )}
+              <select
+                value={eventId}
+                onChange={(e) => setEventId(e.target.value)}
+                className="absolute inset-0 opacity-0 cursor-pointer w-full"
+              >
+                <option value="">Select event</option>
+                {events.map((ev) => (
+                  <option key={ev.id} value={ev.id}>
+                    {ev.name} — {ev.city}
+                  </option>
+                ))}
+              </select>
+            </div>
 
             {/* Name */}
             <div className="flex items-center px-4 py-3.5">

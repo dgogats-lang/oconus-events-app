@@ -40,6 +40,7 @@ export async function createMovement(data: {
 export async function updateMovement(
   id: string,
   data: {
+    eventId: string;
     name: string;
     mode: MovementMode;
     departureLocation: string;
@@ -55,6 +56,7 @@ export async function updateMovement(
     await db.movement.update({
       where: { id },
       data: {
+        eventId: data.eventId,
         name: data.name.trim(),
         mode: data.mode,
         departureLocation: data.departureLocation.trim(),
