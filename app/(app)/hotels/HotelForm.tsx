@@ -63,34 +63,46 @@ export default function HotelForm({
   const isTransit = eventId === "transit";
   const selectedEvent = events.find((e) => e.id === eventId);
 
-  // Initialise autocomplete once the Google script has loaded
+  // Load the Google Maps script and initialise Autocomplete on the address input
   useEffect(() => {
     function initAutocomplete() {
       if (!addressRef.current || !window.google?.maps?.places) return;
+      if (autocompleteRef.current) return; // already initialised
       autocompleteRef.current = new window.google.maps.places.Autocomplete(
         addressRef.current,
         { types: ["establishment", "geocode"] }
       );
       autocompleteRef.current.addListener("place_changed", () => {
-        const place = autocompleteRef.current!.getPlace();
+        const place = autocompleteRef.current.getPlace();
         if (place.formatted_address) setAddress(place.formatted_address);
         if (place.place_id) setGooglePlaceId(place.place_id);
-        // If the user picked a place with a name different from what they typed,
-        // and the hotel name field is still empty, pre-fill it
         if (place.name && !name.trim()) setName(place.name);
       });
     }
 
-    // Script may already be loaded (e.g. navigating back to form)
+    // Already loaded
     if (window.google?.maps?.places) {
       initAutocomplete();
-    } else {
-      // Callback invoked by the script's onload parameter
-      window.initGooglePlaces = initAutocomplete;
+      return;
     }
 
+    // Script already injected but still loading — attach to its onload
+    const existing = document.getElementById("gmaps-places") as HTMLScriptElement | null;
+    if (existing) {
+      existing.addEventListener("load", initAutocomplete);
+      return () => existing.removeEventListener("load", initAutocomplete);
+    }
+
+    // Inject script
+    const script = document.createElement("script");
+    script.id = "gmaps-places";
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&libraries=places`;
+    script.async = true;
+    script.defer = true;
+    script.onload = initAutocomplete;
+    document.head.appendChild(script);
+
     return () => {
-      // Clean up listener on unmount
       if (autocompleteRef.current) {
         window.google?.maps?.event?.clearInstanceListeners(autocompleteRef.current);
       }
