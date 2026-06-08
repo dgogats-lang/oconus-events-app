@@ -188,8 +188,8 @@ export function MovementCardStack({ movements }: { movements: SerializedMovement
           tx = csp * -((1 - absCsp / cardCount / 4) * 10);
         }
 
-        // translateZ
-        const tz = 200 - absCsp * 40;
+        // translateZ — negative so cards behind appear smaller (not larger)
+        const tz = -absCsp * 40;
 
         // rotateY
         let ry = 0;
@@ -314,6 +314,7 @@ export function MovementCardStack({ movements }: { movements: SerializedMovement
                 left: '50%',
                 width: '92%',
                 height: 'calc(100% - 16px)',
+                transform: 'translateX(-50%) translateY(-50%)',
                 transformStyle: 'preserve-3d',
                 pointerEvents: 'none',
               }}
