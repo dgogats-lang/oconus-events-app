@@ -147,30 +147,32 @@ export default function HotelForm({
 
   return (
     <form onSubmit={handleSubmit} className="pb-24">
-      {/* Nav */}
-      <div className="flex items-center justify-between px-4 pt-4 pb-2">
-        <Link
-          href={backHref}
-          className="inline-flex items-center gap-1 text-sm font-medium text-[#0C2340] bg-[#E8EDF2] rounded-full px-3 py-1.5"
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <polyline points="15 18 9 12 15 6" />
-          </svg>
-          {isEdit ? "Hotel" : "Hotels"}
-        </Link>
-        <button
-          type="submit"
-          disabled={isPending}
-          className="text-sm font-semibold text-[#0C2340] bg-[#E8EDF2] rounded-full px-3 py-1.5 disabled:opacity-40"
-        >
-          {isPending ? "Saving…" : "Save"}
-        </button>
+      {/* Nav bar */}
+      <div className="grid grid-cols-[1fr_auto_1fr] items-center px-4 py-3 border-b border-gray-100 bg-white">
+        <div className="flex justify-start">
+          <Link
+            href={backHref}
+            className="inline-flex items-center gap-1 text-sm font-semibold text-[#0C2340] bg-[#F1F5F9] rounded-full px-3 py-1.5"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="15 18 9 12 15 6" />
+            </svg>
+            {isEdit ? "Hotel" : "Hotels"}
+          </Link>
+        </div>
+        <p className="text-[15px] font-bold text-[#0C2340] text-center">
+          {isEdit ? "Edit hotel" : "New hotel"}
+        </p>
+        <div className="flex justify-end">
+          <button
+            type="submit"
+            disabled={isPending}
+            className="text-sm font-bold text-white bg-[#0C2340] rounded-full px-4 py-1.5 disabled:opacity-40"
+          >
+            {isPending ? "Saving…" : "Save"}
+          </button>
+        </div>
       </div>
-
-      {/* Title */}
-      <h1 className="text-2xl font-semibold text-gray-900 px-4 pt-2 pb-5">
-        {isEdit ? "Edit hotel" : "New hotel"}
-      </h1>
 
       {/* Error banner */}
       {error && (
