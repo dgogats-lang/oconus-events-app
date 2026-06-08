@@ -1,7 +1,8 @@
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import Link from "next/link";
-import { MovementMode, FlightStatus } from "@prisma/client";
+import { FlightStatus } from "@prisma/client";
+import { MovementCardStack, SerializedMovement } from "./MovementCardStack";
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -20,15 +21,6 @@ function localNow(timezone: string): Date {
   return new Date(s.replace(" ", "T") + ".000Z");
 }
 
-const MODE_LABEL: Record<MovementMode, string> = {
-  BUS:    "Bus",
-  CAR:    "Car",
-  FLIGHT: "Flight",
-  TRAIN:  "Train",
-  WALK:   "Walk",
-  OTHER:  "Transfer",
-};
-
 const STATUS_PILL: Record<FlightStatus, { label: string; className: string }> = {
   SCHEDULED: { label: "Scheduled", className: "bg-gray-100 text-gray-500" },
   ON_TIME:   { label: "On Time",   className: "bg-green-50 text-green-700" },
@@ -36,33 +28,6 @@ const STATUS_PILL: Record<FlightStatus, { label: string; className: string }> = 
   LANDED:    { label: "Landed",    className: "bg-blue-50 text-blue-700" },
   CANCELLED: { label: "Cancelled", className: "bg-red-50 text-red-600" },
 };
-
-function fmtTime(d: Date | null | undefined) {
-  if (!d) return "—";
-  return d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
-}
-
-function fmtDayTime(d: Date | null | undefined) {
-  if (!d) return "—";
-  return d.toLocaleString("en-US", {
-    weekday: "short",
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  });
-}
-
-function fmtDuration(dep: Date, arr: Date | null | undefined): string | null {
-  if (!arr) return null;
-  const mins = Math.round((arr.getTime() - dep.getTime()) / 60000);
-  if (mins <= 0) return null;
-  const h = Math.floor(mins / 60);
-  const m = mins % 60;
-  if (h === 0) return `${m}m`;
-  if (m === 0) return `${h}h`;
-  return `${h}h ${m}m`;
-}
 
 // ─── data fetching ───────────────────────────────────────────────────────────
 
@@ -182,11 +147,11 @@ async function getTodayData() {
         })
       : null;
 
-  // 6. Next movement for current event
+  // 6. Upcoming movements for current event (next 5)
   // Use localNow so the comparison is against wall-clock time at the event
   // location, not UTC (movement times are stored as dumb-local).
-  const nextMovement = currentEvent
-    ? await db.movement.findFirst({
+  const upcomingMovements = currentEvent
+    ? await db.movement.findMany({
         where: {
           eventId: currentEvent.id,
           departureTime: { gte: localNow(currentEvent.timezone) },
@@ -195,8 +160,9 @@ async function getTodayData() {
           _count: { select: { movementManifestEntries: true } },
         },
         orderBy: { departureTime: "asc" },
+        take: 5,
       })
-    : null;
+    : [];
 
   // 7. Hotels for current event with attendee counts
   const hotels = currentEvent
@@ -218,7 +184,7 @@ async function getTodayData() {
     showDepartures,
     todayDepartures,
     nextDepartureDate: nextDepartureRow?.departureScheduledAt ?? null,
-    nextMovement,
+    upcomingMovements,
     hotels,
   };
 }
@@ -236,9 +202,24 @@ export default async function TodayPage() {
     showDepartures,
     todayDepartures,
     nextDepartureDate,
-    nextMovement,
+    upcomingMovements,
     hotels,
   } = await getTodayData();
+
+  // Serialize Date objects for the client component
+  const serializedMovements: SerializedMovement[] = (upcomingMovements ?? []).map((m) => ({
+    id: m.id,
+    name: m.name,
+    mode: m.mode,
+    departureTime: m.departureTime.toISOString(),
+    arrivalTime: m.arrivalTime?.toISOString() ?? null,
+    departureLocation: m.departureLocation,
+    arrivalLocation: m.arrivalLocation,
+    meetTime: m.meetTime?.toISOString() ?? null,
+    meetLocation: m.meetLocation,
+    notes: m.notes,
+    paxCount: m._count.movementManifestEntries,
+  }));
 
   const today = new Date();
 
@@ -385,8 +366,8 @@ export default async function TodayPage() {
             </Link>
           )}
 
-          {/* ── Next movement ───────────────────────────────────────────── */}
-          {!currentEvent || !nextMovement ? (
+          {/* ── Movements card stack ────────────────────────────────────── */}
+          {!currentEvent || serializedMovements.length === 0 ? (
             <div className="bg-white rounded-2xl p-4 shadow-sm">
               <div className="flex items-center gap-2 mb-3">
                 <p className="text-sm font-semibold text-gray-800">Next movement</p>
@@ -397,109 +378,7 @@ export default async function TodayPage() {
               </p>
             </div>
           ) : (
-            <Link
-              href={`/movements/${nextMovement.id}`}
-              className="block rounded-2xl shadow-sm overflow-hidden active:opacity-90"
-            >
-              {/* ── Dark header ── */}
-              <div className="bg-[#0C2340] px-4 pt-3.5 pb-4">
-
-                {/* Label row: "Next movement" + combined mode|pax pill */}
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-[10px] font-semibold text-blue-300 uppercase tracking-wider">
-                    Next movement
-                  </span>
-                  <div className="flex items-center rounded-full overflow-hidden" style={{background: "rgba(255,255,255,0.12)"}}>
-                    <span className="text-[10px] font-semibold text-blue-200 px-2.5 py-1 border-r" style={{borderColor: "rgba(255,255,255,0.15)"}}>
-                      {MODE_LABEL[nextMovement.mode]}
-                    </span>
-                    <span className="text-[10px] font-semibold text-blue-200 px-2.5 py-1 flex items-center gap-1">
-                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
-                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-                      </svg>
-                      {nextMovement._count.movementManifestEntries} pax
-                    </span>
-                  </div>
-                </div>
-
-                {/* Movement name */}
-                <p className="text-[15px] font-semibold text-white mb-3 leading-snug">
-                  {nextMovement.name}
-                </p>
-
-                {/* Stat columns: Meet · Departs · Duration */}
-                <div className="flex items-start gap-4">
-                  {(nextMovement.meetTime || nextMovement.meetLocation) ? (
-                    <>
-                      <div className="shrink-0">
-                        <p className="text-[10px] font-semibold text-blue-300 uppercase tracking-wider mb-1">Meet</p>
-                        <p className="text-[22px] font-semibold text-white leading-none">
-                          {nextMovement.meetTime ? fmtTime(nextMovement.meetTime) : "—"}
-                        </p>
-                        {nextMovement.meetLocation && (
-                          <p className="text-[11px] text-blue-300 mt-0.5">{nextMovement.meetLocation}</p>
-                        )}
-                      </div>
-                      <div className="w-px self-stretch mt-1" style={{background: "rgba(255,255,255,0.15)"}} />
-                    </>
-                  ) : null}
-                  <div className="shrink-0">
-                    <p className="text-[10px] font-semibold text-blue-300 uppercase tracking-wider mb-1">Departs</p>
-                    <p className="text-[22px] font-semibold text-white leading-none">
-                      {fmtTime(nextMovement.departureTime)}
-                    </p>
-                    <p className="text-[11px] text-blue-300 mt-0.5">
-                      {nextMovement.departureTime.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}
-                    </p>
-                  </div>
-                  {fmtDuration(nextMovement.departureTime, nextMovement.arrivalTime) && (
-                    <>
-                      <div className="w-px self-stretch mt-1" style={{background: "rgba(255,255,255,0.15)"}} />
-                      <div className="shrink-0">
-                        <p className="text-[10px] font-semibold text-blue-300 uppercase tracking-wider mb-1">Duration</p>
-                        <p className="text-[22px] font-semibold text-white leading-none">
-                          {fmtDuration(nextMovement.departureTime, nextMovement.arrivalTime)}
-                        </p>
-                      </div>
-                    </>
-                  )}
-                </div>
-              </div>
-
-              {/* ── White lower section ── */}
-              <div className="bg-white px-4 pt-3 pb-3.5">
-                {/* Route with inline times */}
-                <div className="flex flex-col">
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 rounded-full border-2 border-gray-400 bg-white shrink-0" />
-                      <p className="text-sm text-gray-800">{nextMovement.departureLocation}</p>
-                    </div>
-                    <p className="text-xs text-gray-400 shrink-0">{fmtTime(nextMovement.departureTime)}</p>
-                  </div>
-                  <div className="flex gap-2 py-0.5 ml-[3px]">
-                    <div className="w-px h-4 bg-gray-200 ml-[3px]" />
-                  </div>
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 rounded-full bg-gray-700 shrink-0" />
-                      <p className="text-sm text-gray-800">{nextMovement.arrivalLocation}</p>
-                    </div>
-                    {nextMovement.arrivalTime && (
-                      <p className="text-xs text-gray-400 shrink-0">{fmtTime(nextMovement.arrivalTime)}</p>
-                    )}
-                  </div>
-                </div>
-
-                {/* Notes */}
-                {nextMovement.notes && (
-                  <div className="mt-2.5 bg-amber-50 rounded-xl px-3 py-2">
-                    <p className="text-xs text-amber-800 leading-relaxed">{nextMovement.notes}</p>
-                  </div>
-                )}
-              </div>
-            </Link>
+            <MovementCardStack movements={serializedMovements} />
           )}
 
           {/* ── Hotels ─────────────────────────────────────────────────── */}
