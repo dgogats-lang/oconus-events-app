@@ -117,6 +117,8 @@ export default async function MovementManifestPage({
   });
 
   if (!movement) notFound();
+  // Transit movements (no event) will get their own detail page in a future update
+  if (!movement.event) notFound();
 
   // Fetch trip attendees (for add flow) + other movements for same event (for transfer)
   const [tripAttendees, otherMovements] = await Promise.all([

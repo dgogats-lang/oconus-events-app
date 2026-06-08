@@ -126,8 +126,8 @@ export default async function AttendeeProfilePage({
   );
   const movementCountByEvent = new Map<string, number>();
   for (const entry of attendee.movementManifestEntries) {
-    const eid = entry.movement.event.id;
-    movementCountByEvent.set(eid, (movementCountByEvent.get(eid) ?? 0) + 1);
+    const eid = entry.movement.event?.id;
+    if (eid) movementCountByEvent.set(eid, (movementCountByEvent.get(eid) ?? 0) + 1);
   }
 
   const attendingEvents = attendee.eventRegistrations.map((reg) => ({
