@@ -162,7 +162,7 @@ export default function HotelForm({
         </div>
       )}
 
-      <div className="space-y-6 px-4">
+      <div className="space-y-6 px-4 pt-6">
 
         {/* ── Details ──────────────────────────────────────────────────── */}
         <div>
