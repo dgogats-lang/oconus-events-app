@@ -222,7 +222,7 @@ export default async function AttendeeProfilePage({
 
           {/* Name + company */}
           <div className="min-w-0">
-            <h1 className="text-xl font-bold text-gray-900">
+            <h1 className="text-2xl font-extrabold text-[#0C2340] tracking-tight">
               {attendee.firstName} {attendee.lastName}
             </h1>
             {attendee.company && (

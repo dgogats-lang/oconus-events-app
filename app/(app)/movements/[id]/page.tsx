@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { MovementMode } from "@prisma/client";
 import ManifestClient from "./ManifestClient";
 import DetailNavBar from "@/components/DetailNavBar";
+import RecordHeader from "@/components/RecordHeader";
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
@@ -159,13 +160,10 @@ export default async function MovementManifestPage({
       />
 
       {/* Header */}
-      <div className="px-4 pt-4 pb-5">
-        <p className="text-xs text-gray-400 mb-1">
-          {movement.event.name} · {movement.event.city}
-        </p>
-        <h1 className="text-xl font-bold text-gray-900 leading-snug">
-          {movement.name}
-        </h1>
+      <RecordHeader
+        eyebrow={`${movement.event.name} · ${movement.event.city}`}
+        title={movement.name}
+      >
 
         {/* Mode + time */}
         <div className="flex items-center gap-2 mt-2">
@@ -223,7 +221,7 @@ export default async function MovementManifestPage({
             </p>
           </div>
         )}
-      </div>
+      </RecordHeader>
 
       {/* Manifest */}
       <div className="px-4">

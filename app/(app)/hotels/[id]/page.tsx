@@ -4,6 +4,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import HotelManifestClient from "./HotelManifestClient";
 import DetailNavBar from "@/components/DetailNavBar";
+import RecordHeader from "@/components/RecordHeader";
 
 // ─── data fetching ────────────────────────────────────────────────────────────
 
@@ -140,11 +141,10 @@ export default async function HotelDetailPage({
       />
 
       {/* Header */}
-      <div className="px-4 pt-4 pb-5">
-        <p className="text-xs text-gray-400 mb-1">
-          {hotel.event ? `${hotel.event.name} · ${hotel.event.city}` : "Transit"}
-        </p>
-        <h1 className="text-xl font-bold text-gray-900 leading-snug">{hotel.name}</h1>
+      <RecordHeader
+        eyebrow={hotel.event ? `${hotel.event.name} · ${hotel.event.city}` : "Transit"}
+        title={hotel.name}
+      >
 
         {(hotel.address || hotel.phone) && (
           <div className="mt-3 space-y-1.5">
@@ -184,7 +184,7 @@ export default async function HotelDetailPage({
             <p className="text-xs text-amber-800 leading-relaxed">{hotel.notes}</p>
           </div>
         )}
-      </div>
+      </RecordHeader>
 
       {/* Rooming list (client) */}
       <HotelManifestClient
