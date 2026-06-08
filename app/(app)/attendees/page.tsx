@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import Link from "next/link";
 import AttendeeSearch from "./AttendeeSearch";
+import PageHeader from "@/components/PageHeader";
 
 // ─── data fetching ────────────────────────────────────────────────────────────
 
@@ -79,21 +80,15 @@ export default async function AttendeesPage({
   return (
     <div className="px-4 pt-6 pb-24">
       {/* Header */}
-      <div className="mb-4">
-        {trip && (
-          <p className="text-[10px] font-bold text-gray-400 tracking-widest uppercase mb-1.5">
-            {trip.name}
-          </p>
-        )}
-        <div className="flex items-center justify-between">
-          <h1 className="text-[30px] font-extrabold text-[#0C2340] tracking-tight leading-none">
-            Attendees
-          </h1>
+      <PageHeader
+        eyebrow={trip?.name}
+        title="Attendees"
+        action={
           <span className="bg-[#0C2340] text-white text-xs font-bold px-3 py-1.5 rounded-full">
             {attendees.length}
           </span>
-        </div>
-      </div>
+        }
+      />
 
       {/* Search + filter */}
       <AttendeeSearch

@@ -2,9 +2,9 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import { MovementMode } from "@prisma/client";
 import { createMovement, updateMovement } from "@/actions/movement";
+import FormNavBar from "@/components/FormNavBar";
 
 // ─── types ────────────────────────────────────────────────────────────────────
 
@@ -146,31 +146,12 @@ export default function MovementForm({
   return (
     <form onSubmit={handleSubmit} className="pb-24">
       {/* Nav bar */}
-      <div className="grid grid-cols-[1fr_auto_1fr] items-center px-4 py-3 border-b border-gray-100 bg-white">
-        <div className="flex justify-start">
-          <Link
-            href={backHref}
-            className="inline-flex items-center gap-1 text-sm font-semibold text-[#0C2340] bg-[#F1F5F9] rounded-full px-3 py-1.5"
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="15 18 9 12 15 6" />
-            </svg>
-            {isEdit ? "Movement" : "Movements"}
-          </Link>
-        </div>
-        <p className="text-[15px] font-bold text-[#0C2340] text-center">
-          {isEdit ? "Edit movement" : "New movement"}
-        </p>
-        <div className="flex justify-end">
-          <button
-            type="submit"
-            disabled={isPending}
-            className="text-sm font-bold text-white bg-[#0C2340] rounded-full px-4 py-1.5 disabled:opacity-40"
-          >
-            {isPending ? "Saving…" : "Save"}
-          </button>
-        </div>
-      </div>
+      <FormNavBar
+        backHref={backHref}
+        backLabel={isEdit ? "Movement" : "Movements"}
+        title={isEdit ? "Edit movement" : "New movement"}
+        isPending={isPending}
+      />
 
       {/* Error banner */}
       {error && (

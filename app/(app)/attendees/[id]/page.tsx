@@ -1,7 +1,7 @@
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { notFound } from "next/navigation";
-import Link from "next/link";
+import DetailNavBar from "@/components/DetailNavBar";
 import { MovementMode, MovementEntryStatus } from "@prisma/client";
 import NotesEditor from "./NotesEditor";
 import AttendeeHotelsClient, { type HotelStop } from "./AttendeeHotelsClient";
@@ -207,26 +207,7 @@ export default async function AttendeeProfilePage({
   return (
     <div className="pb-24">
       {/* ── Back nav ────────────────────────────────────────────────────── */}
-      <div className="px-4 pt-4">
-        <Link
-          href="/attendees"
-          className="inline-flex items-center gap-1 text-sm text-[#0C2340] font-medium"
-        >
-          <svg
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <polyline points="15 18 9 12 15 6" />
-          </svg>
-          Attendees
-        </Link>
-      </div>
+      <DetailNavBar backHref="/attendees" backLabel="Attendees" />
 
       {/* ── Profile header ──────────────────────────────────────────────── */}
       <div className="px-4 pt-4 pb-5">

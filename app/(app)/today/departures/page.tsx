@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import Link from "next/link";
+import DetailNavBar from "@/components/DetailNavBar";
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
@@ -67,25 +68,15 @@ export default async function DeparturesPage() {
   const { trip, groups } = await getAllDepartures();
 
   return (
-    <div className="px-4 pt-4 pb-24">
-      {/* Back nav */}
-      <div className="mb-4">
-        <Link
-          href="/today"
-          className="inline-flex items-center gap-1 text-sm text-[#0C2340] font-medium"
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <polyline points="15 18 9 12 15 6" />
-          </svg>
-          Today
-        </Link>
+    <div className="pb-24">
+      <DetailNavBar backHref="/today" backLabel="Today" />
+      <div className="px-4 mt-4 mb-5">
+        <h1 className="text-[30px] font-extrabold text-[#0C2340] tracking-tight leading-none">Departures</h1>
+        {trip && (
+          <p className="text-[10px] font-bold text-gray-400 tracking-widest uppercase mt-1.5">{trip.name}</p>
+        )}
       </div>
-
-      <h1 className="text-xl font-semibold text-gray-900 mb-1">Departures</h1>
-      {trip && (
-        <p className="text-xs font-medium text-blue-700 mb-5">{trip.name}</p>
-      )}
-
+      <div className="px-4 pb-24">
       {!trip || groups.length === 0 ? (
         <div className="bg-white rounded-2xl p-6 shadow-sm text-center">
           <p className="text-gray-400 text-sm">No departure data loaded yet.</p>
@@ -147,6 +138,7 @@ export default async function DeparturesPage() {
           ))}
         </div>
       )}
+      </div>
     </div>
   );
 }
