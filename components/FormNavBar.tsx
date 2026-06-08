@@ -16,7 +16,7 @@ export default function FormNavBar({
   saveLabel = "Save",
 }: FormNavBarProps) {
   return (
-    <div className="grid grid-cols-[1fr_auto_1fr] items-center px-4 py-3 border-b border-gray-100 bg-white">
+    <div className="grid grid-cols-[1fr_auto_1fr] items-center px-4 py-5 border-b border-gray-100 bg-white">
       <div className="flex justify-start">
         <Link
           href={backHref}
