@@ -134,6 +134,7 @@ function fmtMovementTime(d: Date) {
     day: "numeric",
     hour: "numeric",
     minute: "2-digit",
+    timeZone: "UTC", // dumb-local storage (DEC-020): display UTC value as-is
   });
 }
 

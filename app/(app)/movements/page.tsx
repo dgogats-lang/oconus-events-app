@@ -148,8 +148,8 @@ export default async function MovementsPage() {
                       (e) => e.status === "CHECKED_IN"
                     ).length;
                     const allDone = total > 0 && checkedIn === total;
-                    const departing = isPast(movement.departureTime, event.timezone);
-                    const todayMovement = isToday(movement.departureTime, event.timezone);
+                    const departing = isPast(movement.departureTime, movement.timezone ?? event.timezone);
+                    const todayMovement = isToday(movement.departureTime, movement.timezone ?? event.timezone);
 
                     return (
                       <Link

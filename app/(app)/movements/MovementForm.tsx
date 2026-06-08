@@ -12,10 +12,12 @@ interface EventOption {
   id: string;
   name: string;
   city: string;
+  timezone: string;
 }
 
 interface InitialValues {
-  eventId: string;
+  eventId: string | null;
+  timezone: string;
   name: string;
   mode: MovementMode;
   departureLocation: string;
@@ -26,6 +28,25 @@ interface InitialValues {
   meetLocation?: string | null;
   notes?: string | null;
 }
+
+// Common IANA timezones for OCONUS events
+const TIMEZONE_OPTIONS = [
+  { value: "Europe/Berlin",       label: "Berlin / Munich (CET/CEST)" },
+  { value: "Europe/Warsaw",       label: "Warsaw (CET/CEST)" },
+  { value: "Europe/London",       label: "London (GMT/BST)" },
+  { value: "Europe/Paris",        label: "Paris / Amsterdam (CET/CEST)" },
+  { value: "Europe/Zurich",       label: "Zurich / Geneva (CET/CEST)" },
+  { value: "Europe/Rome",         label: "Rome / Milan (CET/CEST)" },
+  { value: "Europe/Madrid",       label: "Madrid (CET/CEST)" },
+  { value: "Europe/Athens",       label: "Athens / Kyiv (EET/EEST)" },
+  { value: "America/New_York",    label: "New York (ET)" },
+  { value: "America/Chicago",     label: "Chicago (CT)" },
+  { value: "America/Denver",      label: "Denver (MT)" },
+  { value: "America/Los_Angeles", label: "Los Angeles (PT)" },
+  { value: "Asia/Tokyo",          label: "Tokyo (JST)" },
+  { value: "Asia/Seoul",          label: "Seoul (KST)" },
+  { value: "UTC",                 label: "UTC" },
+];
 
 interface MovementFormProps {
   events: EventOption[];
@@ -71,6 +92,11 @@ export default function MovementForm({
 
   const [mode, setMode]             = useState<MovementMode>(initialValues?.mode ?? "BUS");
   const [eventId, setEventId]       = useState(initialValues?.eventId ?? "");
+  const [timezone, setTimezone]     = useState(
+    initialValues?.timezone ??
+    events.find((e) => e.id === initialValues?.eventId)?.timezone ??
+    "UTC"
+  );
   const [name, setName]             = useState(initialValues?.name ?? "");
   const [depLocation, setDepLocation] = useState(initialValues?.departureLocation ?? "");
   const [arrLocation, setArrLocation] = useState(initialValues?.arrivalLocation ?? "");
@@ -105,8 +131,9 @@ export default function MovementForm({
     startTransition(async () => {
       if (isEdit) {
         const result = await updateMovement(movementId, {
-          eventId,
-          name: name.trim(),
+          eventId:           eventId || null,
+          timezone,
+          name:              name.trim(),
           mode,
           departureLocation: depLocation.trim(),
           arrivalLocation:   arrLocation.trim(),
@@ -123,7 +150,8 @@ export default function MovementForm({
         }
       } else {
         const result = await createMovement({
-          eventId,
+          eventId:           eventId || null,
+          timezone,
           name:              name.trim(),
           mode,
           departureLocation: depLocation.trim(),
@@ -182,7 +210,12 @@ export default function MovementForm({
               </div>
               <select
                 value={eventId}
-                onChange={(e) => setEventId(e.target.value)}
+                onChange={(e) => {
+                  setEventId(e.target.value);
+                  // Auto-populate timezone from the selected event
+                  const ev = events.find((ev) => ev.id === e.target.value);
+                  if (ev) setTimezone(ev.timezone);
+                }}
                 className="absolute inset-0 opacity-0 cursor-pointer w-full"
               >
                 <option value="">Select event</option>
@@ -190,6 +223,28 @@ export default function MovementForm({
                   <option key={ev.id} value={ev.id}>
                     {ev.name} — {ev.city}
                   </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Timezone — auto-populated from event, overrideable for cross-timezone flights */}
+            <div className="flex items-center px-4 py-3.5 relative">
+              <span className="text-sm text-gray-700 w-24 shrink-0">Timezone</span>
+              <div className="flex-1 flex items-center justify-end gap-1 min-w-0">
+                <span className="text-sm text-gray-900 truncate">
+                  {TIMEZONE_OPTIONS.find((t) => t.value === timezone)?.label ?? timezone}
+                </span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-300 shrink-0">
+                  <polyline points="9 18 15 12 9 6" />
+                </svg>
+              </div>
+              <select
+                value={timezone}
+                onChange={(e) => setTimezone(e.target.value)}
+                className="absolute inset-0 opacity-0 cursor-pointer w-full"
+              >
+                {TIMEZONE_OPTIONS.map((tz) => (
+                  <option key={tz.value} value={tz.value}>{tz.label}</option>
                 ))}
               </select>
             </div>

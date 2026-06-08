@@ -9,9 +9,7 @@ function fmtTime(d: Date | null | undefined) {
   return d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
 }
 
-function fmtDateHeading(d: Date) {
-  const today = new Date();
-  const isToday = d.toDateString() === today.toDateString();
+function fmtDateHeading(d: Date, isToday: boolean) {
   const label = d.toLocaleDateString("en-US", {
     weekday: "long",
     month: "long",
@@ -22,9 +20,24 @@ function fmtDateHeading(d: Date) {
 
 // ─── data fetching ────────────────────────────────────────────────────────────
 
+// Returns a Date whose UTC value equals the current wall-clock time in the
+// given IANA timezone. Used to compare against dumb-local stored times.
+function localNow(timezone: string): Date {
+  const s = new Date().toLocaleString("sv-SE", { timeZone: timezone });
+  return new Date(s.replace(" ", "T") + ".000Z");
+}
+
 async function getAllArrivals() {
   const trip = await db.trip.findFirst({ where: { isActive: true } });
   if (!trip) return { trip: null, groups: [] };
+
+  // Get timezone from the earliest event (arrivals happen at trip start)
+  const firstEvent = await db.event.findFirst({
+    where: { tripId: trip.id },
+    orderBy: { date: "asc" },
+    select: { timezone: true },
+  });
+  const todayStr = localNow(firstEvent?.timezone ?? "UTC").toDateString();
 
   const arrivals = await db.attendee.findMany({
     where: {
@@ -53,7 +66,7 @@ async function getAllArrivals() {
 
   const groups = Array.from(map.entries()).map(([dateStr, items]) => ({
     date: new Date(dateStr),
-    isToday: dateStr === new Date().toDateString(),
+    isToday: dateStr === todayStr,
     items,
   }));
 
@@ -87,7 +100,7 @@ export default async function ArrivalsPage() {
               {/* Date heading */}
               <div className="flex items-center gap-2 mb-2">
                 <p className={`text-xs font-semibold uppercase tracking-wide ${group.isToday ? "text-blue-700" : "text-gray-400"}`}>
-                  {fmtDateHeading(group.date)}
+                  {fmtDateHeading(group.date, group.isToday)}
                 </p>
                 <div className="flex-1 h-px bg-gray-100" />
                 <span className="text-xs text-gray-400">

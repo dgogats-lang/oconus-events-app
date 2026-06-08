@@ -171,17 +171,17 @@ async function main() {
   await Promise.all([
     ...attendees.slice(0, 9).map((a, i) =>
       db.hotelManifestEntry.create({
-        data: { eventId: munich.id, attendeeId: a.id, hotelId: hotelBayerischer.id, roomNumber: `${201 + i}`, checkIn: today, checkOut: new Date(today.getTime() + 4 * 24 * 60 * 60 * 1000) },
+        data: { attendeeId: a.id, hotelId: hotelBayerischer.id, roomNumber: `${201 + i}`, checkIn: today, checkOut: new Date(today.getTime() + 4 * 24 * 60 * 60 * 1000) },
       })
     ),
     ...attendees.slice(9).map((a, i) =>
       db.hotelManifestEntry.create({
-        data: { eventId: munich.id, attendeeId: a.id, hotelId: hotelMarriott.id, roomNumber: `${301 + i}`, checkIn: today, checkOut: new Date(today.getTime() + 4 * 24 * 60 * 60 * 1000) },
+        data: { attendeeId: a.id, hotelId: hotelMarriott.id, roomNumber: `${301 + i}`, checkIn: today, checkOut: new Date(today.getTime() + 4 * 24 * 60 * 60 * 1000) },
       })
     ),
     ...warsawAttendees.map((a, i) =>
       db.hotelManifestEntry.create({
-        data: { eventId: warsaw.id, attendeeId: a.id, hotelId: hotelBristol.id, roomNumber: `${401 + i}`, checkIn: new Date(today.getTime() + 4 * 24 * 60 * 60 * 1000), checkOut: new Date(today.getTime() + 8 * 24 * 60 * 60 * 1000) },
+        data: { attendeeId: a.id, hotelId: hotelBristol.id, roomNumber: `${401 + i}`, checkIn: new Date(today.getTime() + 4 * 24 * 60 * 60 * 1000), checkOut: new Date(today.getTime() + 8 * 24 * 60 * 60 * 1000) },
       })
     ),
   ]);
@@ -193,13 +193,14 @@ async function main() {
   const inEightHours = new Date(now.getTime() + 8 * 60 * 60 * 1000);
 
   const bus1 = await db.movement.create({
-    data: { eventId: munich.id, name: "Bus 1 — Airport to Hotels", mode: "BUS", departureLocation: "Munich Airport (MUC) — Terminal 2", arrivalLocation: "Hotel Bayerischer Hof", departureTime: inTwoHours, arrivalTime: new Date(inTwoHours.getTime() + 45 * 60 * 1000), notes: "Meet at arrivals hall exit, look for HOH sign" },
+    data: { tripId: trip.id, eventId: munich.id, timezone: "Europe/Berlin", name: "Bus 1 — Airport to Hotels", mode: "BUS", departureLocation: "Munich Airport (MUC) — Terminal 2", arrivalLocation: "Hotel Bayerischer Hof", departureTime: inTwoHours, arrivalTime: new Date(inTwoHours.getTime() + 45 * 60 * 1000), notes: "Meet at arrivals hall exit, look for HOH sign" },
   });
   const bus2 = await db.movement.create({
-    data: { eventId: munich.id, name: "Bus 2 — Hotels to Venue", mode: "BUS", departureLocation: "Hotel Bayerischer Hof", arrivalLocation: "Munich Conference Center (MCC)", departureTime: inFiveHours, arrivalTime: new Date(inFiveHours.getTime() + 20 * 60 * 1000) },
+    data: { tripId: trip.id, eventId: munich.id, timezone: "Europe/Berlin", name: "Bus 2 — Hotels to Venue", mode: "BUS", departureLocation: "Hotel Bayerischer Hof", arrivalLocation: "Munich Conference Center (MCC)", departureTime: inFiveHours, arrivalTime: new Date(inFiveHours.getTime() + 20 * 60 * 1000) },
   });
+  // Cross-timezone flight: departure timezone = Munich (Europe/Berlin), not Warsaw
   const flight1 = await db.movement.create({
-    data: { eventId: munich.id, name: "Group Flight — Munich to Warsaw", mode: "FLIGHT", departureLocation: "Munich Airport (MUC)", arrivalLocation: "Warsaw Chopin Airport (WAW)", departureTime: inEightHours, arrivalTime: new Date(inEightHours.getTime() + 100 * 60 * 1000), notes: "LH 1682 — check in at Terminal 2, Lufthansa counters by 06:30" },
+    data: { tripId: trip.id, eventId: munich.id, timezone: "Europe/Berlin", name: "Group Flight — Munich to Warsaw", mode: "FLIGHT", departureLocation: "Munich Airport (MUC)", arrivalLocation: "Warsaw Chopin Airport (WAW)", departureTime: inEightHours, arrivalTime: new Date(inEightHours.getTime() + 100 * 60 * 1000), notes: "LH 1682 — check in at Terminal 2, Lufthansa counters by 06:30" },
   });
   console.log("  ✓ Movements");
 

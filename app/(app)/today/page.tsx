@@ -32,11 +32,9 @@ const STATUS_PILL: Record<FlightStatus, { label: string; className: string }> = 
 // ─── data fetching ───────────────────────────────────────────────────────────
 
 async function getTodayData() {
-  const now = new Date();
-  const todayStart = startOfDay(now);
-  const todayEnd = endOfDay(now);
-
-  // 1. Active trip
+  // 1. Active trip — fetched first so we can determine the event timezone
+  //    before computing "today". Vercel runs in UTC; we must use localNow()
+  //    so that "today" reflects wall-clock time at the event location.
   const trip = await db.trip.findFirst({
     where: { isActive: true },
     include: {
@@ -46,7 +44,23 @@ async function getTodayData() {
 
   if (!trip) return { trip: null };
 
-  // 2. Current event: prefer today, else nearest (future first, then most recent past)
+  // 2. Bootstrap timezone via a two-pass approach:
+  //    Approximate currentEvent with UTC first → get its timezone →
+  //    recompute "now" as dumb-local wall-clock for that timezone.
+  const utcNow = new Date();
+  const approxEvent =
+    trip.events.find(
+      (e) => e.date >= startOfDay(utcNow) && e.date <= endOfDay(utcNow)
+    ) ??
+    trip.events.find((e) => e.date > utcNow) ??
+    trip.events[trip.events.length - 1] ??
+    null;
+  const timezone = approxEvent?.timezone ?? "UTC";
+  const now = localNow(timezone);
+  const todayStart = startOfDay(now);
+  const todayEnd = endOfDay(now);
+
+  // 3. Current event: prefer today (local), else nearest future, else most recent past
   let currentEvent =
     trip.events.find(
       (e) => e.date >= todayStart && e.date <= todayEnd
@@ -147,21 +161,21 @@ async function getTodayData() {
         })
       : null;
 
-  // 6. Upcoming movements for current event (next 5)
-  // Use localNow so the comparison is against wall-clock time at the event
-  // location, not UTC (movement times are stored as dumb-local).
+  // 6. Upcoming movements for current event (next 5).
+  // Each movement carries its own timezone (departure city), so we fetch all
+  // movements for the event and filter in JS using localNow(movement.timezone).
+  // This correctly handles cross-timezone flights where the departure city
+  // differs from the event city.
   const upcomingMovements = currentEvent
-    ? await db.movement.findMany({
-        where: {
-          eventId: currentEvent.id,
-          departureTime: { gte: localNow(currentEvent.timezone) },
-        },
+    ? (await db.movement.findMany({
+        where: { eventId: currentEvent.id },
         include: {
           _count: { select: { movementManifestEntries: true } },
         },
         orderBy: { departureTime: "asc" },
-        take: 5,
-      })
+      }))
+        .filter((m) => m.departureTime >= localNow(m.timezone ?? currentEvent.timezone))
+        .slice(0, 5)
     : [];
 
   // 7. Hotels for current event with attendee counts
@@ -221,7 +235,8 @@ export default async function TodayPage() {
     paxCount: m._count.movementManifestEntries,
   }));
 
-  const today = new Date();
+  // Use the event's local "today" for the header date display (Vercel runs in UTC)
+  const today = localNow(currentEvent?.timezone ?? "UTC");
 
   return (
     <div className="px-4 pt-6 pb-24">

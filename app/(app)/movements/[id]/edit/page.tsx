@@ -17,6 +17,7 @@ export default async function EditMovementPage({
       select: {
         id: true,
         eventId: true,
+        timezone: true,
         name: true,
         mode: true,
         departureLocation: true,
@@ -33,7 +34,7 @@ export default async function EditMovementPage({
       include: {
         events: {
           orderBy: { date: "asc" },
-          select: { id: true, name: true, city: true },
+          select: { id: true, name: true, city: true, timezone: true },
         },
       },
     }),
@@ -48,6 +49,7 @@ export default async function EditMovementPage({
       backHref={`/movements/${movement.id}`}
       initialValues={{
         eventId:           movement.eventId,
+        timezone:          movement.timezone ?? "UTC",
         name:              movement.name,
         mode:              movement.mode,
         departureLocation: movement.departureLocation,

@@ -6,7 +6,8 @@ import { MovementEntryStatus, MovementMode } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 
 export async function createMovement(data: {
-  eventId: string;
+  eventId: string | null;
+  timezone: string;
   name: string;
   mode: MovementMode;
   departureLocation: string;
@@ -20,9 +21,26 @@ export async function createMovement(data: {
   const session = await auth();
   if (!session?.user?.email) return { success: false, error: "Not authenticated" };
   try {
+    // Derive tripId from the event when one is set
+    let tripId: string | null = null;
+    if (data.eventId) {
+      const event = await db.event.findUnique({
+        where: { id: data.eventId },
+        select: { tripId: true },
+      });
+      tripId = event?.tripId ?? null;
+    }
+    if (!tripId) {
+      // Fallback: use the active trip
+      const trip = await db.trip.findFirst({ where: { isActive: true }, select: { id: true } });
+      tripId = trip?.id ?? null;
+    }
+
     const movement = await db.movement.create({
       data: {
+        tripId,
         eventId: data.eventId,
+        timezone: data.timezone,
         name: data.name.trim(),
         mode: data.mode,
         departureLocation: data.departureLocation.trim(),
@@ -44,7 +62,8 @@ export async function createMovement(data: {
 export async function updateMovement(
   id: string,
   data: {
-    eventId: string;
+    eventId: string | null;
+    timezone: string;
     name: string;
     mode: MovementMode;
     departureLocation: string;
@@ -59,10 +78,26 @@ export async function updateMovement(
   const session = await auth();
   if (!session?.user?.email) return { success: false, error: "Not authenticated" };
   try {
+    // Re-derive tripId when event changes
+    let tripId: string | null = null;
+    if (data.eventId) {
+      const event = await db.event.findUnique({
+        where: { id: data.eventId },
+        select: { tripId: true },
+      });
+      tripId = event?.tripId ?? null;
+    }
+    if (!tripId) {
+      const trip = await db.trip.findFirst({ where: { isActive: true }, select: { id: true } });
+      tripId = trip?.id ?? null;
+    }
+
     await db.movement.update({
       where: { id },
       data: {
+        tripId,
         eventId: data.eventId,
+        timezone: data.timezone,
         name: data.name.trim(),
         mode: data.mode,
         departureLocation: data.departureLocation.trim(),

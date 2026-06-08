@@ -28,7 +28,10 @@ const MODE_LABEL: Record<MovementMode, string> = {
 
 function fmtTime(iso: string | null | undefined) {
   if (!iso) return '—';
-  return new Date(iso).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+  // timeZone: "UTC" forces display of the stored UTC value, which is the
+  // correct dumb-local wall-clock time (DEC-020). Without this, client-side
+  // rendering would convert to the viewer's device timezone.
+  return new Date(iso).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'UTC' });
 }
 
 function fmtShortDate(iso: string) {

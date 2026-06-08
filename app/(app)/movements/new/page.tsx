@@ -9,7 +9,7 @@ async function getActiveEvents() {
     include: {
       events: {
         orderBy: { date: "asc" },
-        select: { id: true, name: true, city: true },
+        select: { id: true, name: true, city: true, timezone: true },
       },
     },
   });

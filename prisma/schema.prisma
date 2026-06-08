@@ -85,7 +85,8 @@ model Trip {
 
   events    Event[]
   attendees Attendee[]
-  hotels    Hotel[]    // transit hotels not tied to a specific event
+  hotels    Hotel[]     // transit hotels not tied to a specific event
+  movements Movement[]  // transit movements not tied to a specific event
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -225,9 +226,15 @@ model HotelManifestEntry {
 }
 
 // Any ops-managed A→B transfer (bus, car, flight, or other)
+// tripId is always set. eventId is null for transit movements between events.
+// timezone is the IANA timezone of the departure city — used for "is this
+// movement upcoming?" comparisons. Always matches the departure city clock,
+// not the event timezone (which may differ for cross-city flights).
 model Movement {
   id                String       @id @default(cuid())
-  eventId           String
+  tripId            String?      // always set in practice; nullable to simplify migration
+  eventId           String?      // null for transit movements between events
+  timezone          String       @default("UTC")
   name              String       // e.g., "Bus 1 — Hotel to Airport"
   mode              MovementMode
   departureLocation String
@@ -238,12 +245,14 @@ model Movement {
   meetLocation      String?
   notes             String?
 
-  event                   Event                   @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  trip                    Trip?                   @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  event                   Event?                  @relation(fields: [eventId], references: [id], onDelete: Cascade)
   movementManifestEntries MovementManifestEntry[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@index([tripId])
   @@index([eventId])
 }
 
