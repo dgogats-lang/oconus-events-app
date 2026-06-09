@@ -29,7 +29,8 @@ export default function TripForm({ tripId, initialValues, backHref }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
-  async function handleSave() {
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
     if (!name.trim()) { setError("Name is required"); return; }
     if (!startDate)    { setError("Start date is required"); return; }
     if (!endDate)      { setError("End date is required"); return; }
@@ -57,12 +58,12 @@ export default function TripForm({ tripId, initialValues, backHref }: Props) {
   }
 
   return (
-    <div>
+    <form onSubmit={handleSubmit}>
       <FormNavBar
         backHref={backHref}
+        backLabel="Trips"
         title={isEdit ? "Edit Trip" : "New Trip"}
-        onSave={handleSave}
-        saving={saving}
+        isPending={saving}
       />
 
       <div className="px-4 pt-4 pb-24 space-y-4">
@@ -128,6 +129,6 @@ export default function TripForm({ tripId, initialValues, backHref }: Props) {
           </div>
         </div>
       </div>
-    </div>
+    </form>
   );
 }
