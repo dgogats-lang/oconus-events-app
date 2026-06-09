@@ -12,13 +12,19 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   callbacks: {
     ...authConfig.callbacks,
     jwt({ token, user }) {
-      // On sign-in, user object is present — copy role into the JWT
-      if (user) token.role = (user as { role?: string }).role ?? "STAFF";
+      // On sign-in, user object is present — copy id and role into the JWT
+      if (user) {
+        token.id = user.id;
+        token.role = (user as { role?: string }).role ?? "STAFF";
+      }
       return token;
     },
     session({ session, token }) {
       // JWT strategy: session is built from token, not DB user
-      if (session.user) session.user.role = token.role as string;
+      if (session.user) {
+        session.user.id = token.id as string;
+        session.user.role = token.role as string;
+      }
       return session;
     },
   },

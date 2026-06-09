@@ -16,15 +16,17 @@ datasource db {
 // ─────────────────────────────────────────────
 
 model User {
-  id            String    @id @default(cuid())
-  name          String?
-  email         String    @unique
-  emailVerified DateTime?
-  image         String?
-  role          Role      @default(STAFF)
+  id             String    @id @default(cuid())
+  name           String?
+  email          String    @unique
+  emailVerified  DateTime?
+  image          String?
+  role           Role      @default(STAFF)
+  selectedTripId String?   // which trip the user is currently viewing
 
-  accounts Account[]
-  sessions Session[]
+  accounts    Account[]
+  sessions    Session[]
+  memberships TripMembership[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -67,6 +69,13 @@ model VerificationToken {
 enum Role {
   ADMIN
   STAFF
+  SUPER_ADMIN
+}
+
+// Per-trip role for a user. SUPER_ADMIN (global Role) bypasses membership checks entirely.
+enum TripMemberRole {
+  ADMIN
+  STAFF
 }
 
 // ─────────────────────────────────────────────
@@ -83,13 +92,33 @@ model Trip {
   endDate     DateTime
   isActive    Boolean  @default(true)
 
-  events    Event[]
-  attendees Attendee[]
-  hotels    Hotel[]     // transit hotels not tied to a specific event
-  movements Movement[]  // transit movements not tied to a specific event
+  events      Event[]
+  attendees   Attendee[]
+  hotels      Hotel[]          // transit hotels not tied to a specific event
+  movements   Movement[]       // transit movements not tied to a specific event
+  memberships TripMembership[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+// Links a User to a Trip with a per-trip role.
+// SUPER_ADMIN users bypass this table entirely.
+model TripMembership {
+  id     String         @id @default(cuid())
+  userId String
+  tripId String
+  role   TripMemberRole
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  trip Trip @relation(fields: [tripId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, tripId])
+  @@index([userId])
+  @@index([tripId])
 }
 
 // A specific summit/stop within a Trip (e.g., "Munich Summit")

@@ -3,9 +3,12 @@ import { db } from "@/lib/db";
 import Link from "next/link";
 import PageHeader from "@/components/PageHeader";
 
-async function getEventsData() {
-  const trip = await db.trip.findFirst({
-    where: { isActive: true },
+async function getEventsData(userId: string) {
+  const { getActiveTripId } = await import("@/lib/getActiveTrip");
+  const tripId = await getActiveTripId(userId);
+  if (!tripId) return null;
+  const trip = await db.trip.findUnique({
+    where: { id: tripId },
     include: {
       events: {
         orderBy: { date: "asc" },
@@ -32,12 +35,12 @@ export default async function EventsPage() {
   if (!session?.user?.email) return null;
 
   const dbUser = await db.user.findUnique({
-    where: { email: session.user.email },
+    where: { id: session.user.id },
     select: { role: true },
   });
-  const isAdmin = dbUser?.role === "ADMIN";
+  const isAdmin = dbUser?.role === "ADMIN" || dbUser?.role === "SUPER_ADMIN";
 
-  const trip = await getEventsData();
+  const trip = await getEventsData(session.user.id);
   if (!trip) {
     return (
       <div className="px-4 pt-6">

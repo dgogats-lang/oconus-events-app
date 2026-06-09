@@ -3,20 +3,26 @@ import { db } from "@/lib/db";
 import { notFound } from "next/navigation";
 import HotelForm from "../HotelForm";
 
-async function getTripAndEvents() {
-  const trip = await db.trip.findFirst({ where: { isActive: true } });
+async function getTripAndEvents(userId: string) {
+  const { getActiveTripId } = await import("@/lib/getActiveTrip");
+  const tripId = await getActiveTripId(userId);
+  if (!tripId) return null;
+  const [trip, events] = await Promise.all([
+    db.trip.findUnique({ where: { id: tripId } }),
+    db.event.findMany({
+      where: { tripId },
+      select: { id: true, name: true, city: true },
+      orderBy: { date: "asc" },
+    }),
+  ]);
   if (!trip) return null;
-  const events = await db.event.findMany({
-    where: { tripId: trip.id },
-    select: { id: true, name: true, city: true },
-    orderBy: { date: "asc" },
-  });
   return { trip, events };
 }
 
 export default async function NewHotelPage() {
-  await auth();
-  const data = await getTripAndEvents();
+  const session = await auth();
+  if (!session?.user?.id) return null;
+  const data = await getTripAndEvents(session.user.id);
   if (!data) notFound();
 
   return <HotelForm events={data.events} tripId={data.trip.id} backHref="/hotels" />;

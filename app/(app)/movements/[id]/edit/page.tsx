@@ -8,10 +8,14 @@ export default async function EditMovementPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  await auth();
+  const session = await auth();
+  if (!session?.user?.id) return null;
   const { id } = await params;
 
-  const [movement, trip] = await Promise.all([
+  const { getActiveTripId } = await import("@/lib/getActiveTrip");
+  const tripId = await getActiveTripId(session.user.id);
+
+  const [movement, events] = await Promise.all([
     db.movement.findUnique({
       where: { id },
       select: {
@@ -29,22 +33,20 @@ export default async function EditMovementPage({
         notes: true,
       },
     }),
-    db.trip.findFirst({
-      where: { isActive: true },
-      include: {
-        events: {
+    tripId
+      ? db.event.findMany({
+          where: { tripId },
           orderBy: { date: "asc" },
           select: { id: true, name: true, city: true, timezone: true },
-        },
-      },
-    }),
+        })
+      : Promise.resolve([]),
   ]);
 
-  if (!movement || !trip) notFound();
+  if (!movement) notFound();
 
   return (
     <MovementForm
-      events={trip.events}
+      events={events}
       movementId={movement.id}
       backHref={`/movements/${movement.id}`}
       initialValues={{

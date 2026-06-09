@@ -3,22 +3,22 @@ import { db } from "@/lib/db";
 import Link from "next/link";
 import MovementForm from "../MovementForm";
 
-async function getActiveEvents() {
-  const trip = await db.trip.findFirst({
-    where: { isActive: true },
-    include: {
-      events: {
-        orderBy: { date: "asc" },
-        select: { id: true, name: true, city: true, timezone: true },
-      },
-    },
+async function getActiveEvents(userId: string) {
+  const { getActiveTripId } = await import("@/lib/getActiveTrip");
+  const tripId = await getActiveTripId(userId);
+  if (!tripId) return [];
+  const events = await db.event.findMany({
+    where: { tripId },
+    orderBy: { date: "asc" },
+    select: { id: true, name: true, city: true, timezone: true },
   });
-  return trip?.events ?? [];
+  return events;
 }
 
 export default async function NewMovementPage() {
-  await auth();
-  const events = await getActiveEvents();
+  const session = await auth();
+  if (!session?.user?.id) return null;
+  const events = await getActiveEvents(session.user.id);
 
   if (events.length === 0) {
     return (

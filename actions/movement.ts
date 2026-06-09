@@ -19,7 +19,7 @@ export async function createMovement(data: {
   notes?: string | null;
 }): Promise<{ success: boolean; id?: string; error?: string }> {
   const session = await auth();
-  if (!session?.user?.email) return { success: false, error: "Not authenticated" };
+  if (!session?.user?.id) return { success: false, error: "Not authenticated" };
   try {
     // Derive tripId from the event when one is set
     let tripId: string | null = null;
@@ -31,9 +31,9 @@ export async function createMovement(data: {
       tripId = event?.tripId ?? null;
     }
     if (!tripId) {
-      // Fallback: use the active trip
-      const trip = await db.trip.findFirst({ where: { isActive: true }, select: { id: true } });
-      tripId = trip?.id ?? null;
+      // Fallback: use the user's active trip
+      const { getActiveTripId } = await import("@/lib/getActiveTrip");
+      tripId = await getActiveTripId(session.user.id);
     }
 
     const movement = await db.movement.create({
@@ -76,7 +76,7 @@ export async function updateMovement(
   }
 ): Promise<{ success: boolean; error?: string }> {
   const session = await auth();
-  if (!session?.user?.email) return { success: false, error: "Not authenticated" };
+  if (!session?.user?.id) return { success: false, error: "Not authenticated" };
   try {
     // Re-derive tripId when event changes
     let tripId: string | null = null;
@@ -88,8 +88,8 @@ export async function updateMovement(
       tripId = event?.tripId ?? null;
     }
     if (!tripId) {
-      const trip = await db.trip.findFirst({ where: { isActive: true }, select: { id: true } });
-      tripId = trip?.id ?? null;
+      const { getActiveTripId } = await import("@/lib/getActiveTrip");
+      tripId = await getActiveTripId(session.user.id);
     }
 
     await db.movement.update({

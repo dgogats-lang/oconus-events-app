@@ -6,12 +6,14 @@ import { revalidatePath } from "next/cache";
 
 async function requireAdmin() {
   const session = await auth();
-  if (!session?.user?.email) return null;
+  if (!session?.user?.id) return null;
   const user = await db.user.findUnique({
-    where: { email: session.user.email },
-    select: { role: true },
+    where: { id: session.user.id },
+    select: { id: true, role: true },
   });
-  return user?.role === "ADMIN" ? session : null;
+  if (!user) return null;
+  if (user.role !== "ADMIN" && user.role !== "SUPER_ADMIN") return null;
+  return { session, userId: user.id };
 }
 
 export async function createEvent(data: {
@@ -21,16 +23,17 @@ export async function createEvent(data: {
   date: string;
   timezone: string;
 }): Promise<{ success: boolean; id?: string; error?: string }> {
-  const session = await requireAdmin();
-  if (!session) return { success: false, error: "Admin only" };
+  const admin = await requireAdmin();
+  if (!admin) return { success: false, error: "Admin only" };
 
   try {
-    const trip = await db.trip.findFirst({ where: { isActive: true }, select: { id: true } });
-    if (!trip) return { success: false, error: "No active trip" };
+    const { getActiveTripId } = await import("@/lib/getActiveTrip");
+    const tripId = await getActiveTripId(admin.userId);
+    if (!tripId) return { success: false, error: "No active trip" };
 
     const event = await db.event.create({
       data: {
-        tripId: trip.id,
+        tripId,
         name: data.name.trim(),
         city: data.city.trim(),
         country: data.country.trim(),
@@ -57,8 +60,8 @@ export async function updateEvent(
     timezone: string;
   }
 ): Promise<{ success: boolean; error?: string }> {
-  const session = await requireAdmin();
-  if (!session) return { success: false, error: "Admin only" };
+  const admin = await requireAdmin();
+  if (!admin) return { success: false, error: "Admin only" };
 
   try {
     await db.event.update({

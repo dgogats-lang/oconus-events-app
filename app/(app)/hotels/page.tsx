@@ -5,9 +5,12 @@ import PageHeader from "@/components/PageHeader";
 
 // ─── data fetching ────────────────────────────────────────────────────────────
 
-async function getHotelsData() {
-  const trip = await db.trip.findFirst({
-    where: { isActive: true },
+async function getHotelsData(userId: string) {
+  const { getActiveTripId } = await import("@/lib/getActiveTrip");
+  const tripId = await getActiveTripId(userId);
+  if (!tripId) return null;
+  const trip = await db.trip.findUnique({
+    where: { id: tripId },
     include: {
       events: {
         orderBy: { date: "asc" },
@@ -36,8 +39,9 @@ function fmtDate(d: Date) {
 // ─── component ────────────────────────────────────────────────────────────────
 
 export default async function HotelsPage() {
-  await auth();
-  const trip = await getHotelsData();
+  const session = await auth();
+  if (!session?.user?.id) return null;
+  const trip = await getHotelsData(session.user.id);
 
   if (!trip) {
     return (

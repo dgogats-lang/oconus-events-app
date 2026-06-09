@@ -54,9 +54,12 @@ function isPast(d: Date, timezone: string) {
 
 // ─── data fetching ────────────────────────────────────────────────────────────
 
-async function getMovementsData() {
-  const trip = await db.trip.findFirst({
-    where: { isActive: true },
+async function getMovementsData(userId: string) {
+  const { getActiveTripId } = await import("@/lib/getActiveTrip");
+  const tripId = await getActiveTripId(userId);
+  if (!tripId) return null;
+  const trip = await db.trip.findUnique({
+    where: { id: tripId },
     include: {
       events: {
         orderBy: { date: "asc" },
@@ -80,9 +83,10 @@ async function getMovementsData() {
 // ─── component ────────────────────────────────────────────────────────────────
 
 export default async function MovementsPage() {
-  await auth(); // ensure session is active
+  const session = await auth();
+  if (!session?.user?.id) return null;
 
-  const trip = await getMovementsData();
+  const trip = await getMovementsData(session.user.id);
 
   if (!trip) {
     return (

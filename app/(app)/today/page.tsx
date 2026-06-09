@@ -31,12 +31,15 @@ const STATUS_PILL: Record<FlightStatus, { label: string; className: string }> = 
 
 // ─── data fetching ───────────────────────────────────────────────────────────
 
-async function getTodayData() {
+async function getTodayData(userId: string) {
   // 1. Active trip — fetched first so we can determine the event timezone
   //    before computing "today". Vercel runs in UTC; we must use localNow()
   //    so that "today" reflects wall-clock time at the event location.
-  const trip = await db.trip.findFirst({
-    where: { isActive: true },
+  const { getActiveTripId } = await import("@/lib/getActiveTrip");
+  const tripId = await getActiveTripId(userId);
+  if (!tripId) return { trip: null };
+  const trip = await db.trip.findUnique({
+    where: { id: tripId },
     include: {
       events: { orderBy: { date: "asc" } },
     },
@@ -207,6 +210,7 @@ async function getTodayData() {
 
 export default async function TodayPage() {
   const session = await auth();
+  if (!session?.user?.id) return null;
   const {
     trip,
     currentEvent,
@@ -218,7 +222,7 @@ export default async function TodayPage() {
     nextDepartureDate,
     upcomingMovements,
     hotels,
-  } = await getTodayData();
+  } = await getTodayData(session.user.id);
 
   // Serialize Date objects for the client component
   const serializedMovements: SerializedMovement[] = (upcomingMovements ?? []).map((m) => ({

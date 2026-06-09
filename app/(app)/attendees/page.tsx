@@ -7,12 +7,16 @@ import PageHeader from "@/components/PageHeader";
 // ─── data fetching ────────────────────────────────────────────────────────────
 
 async function getAttendeesData(
+  userId: string,
   search: string,
   filters: string[],
   eventId: string
 ) {
-  const trip = await db.trip.findFirst({
-    where: { isActive: true },
+  const { getActiveTripId } = await import("@/lib/getActiveTrip");
+  const tripId = await getActiveTripId(userId);
+  if (!tripId) return { trip: null, currentEvent: null, events: [], attendees: [] };
+  const trip = await db.trip.findUnique({
+    where: { id: tripId },
     include: { events: { orderBy: { date: "asc" } } },
   });
 
@@ -65,13 +69,15 @@ export default async function AttendeesPage({
 }: {
   searchParams: Promise<{ q?: string; filter?: string; eventId?: string }>;
 }) {
-  await auth();
+  const session = await auth();
+  if (!session?.user?.id) return null;
   const { q, filter, eventId } = await searchParams;
   const search = q ?? "";
   const activeFilters = (filter ?? "").split(",").filter(Boolean);
   const activeEventId = eventId ?? "";
 
   const { trip, currentEvent, events, attendees } = await getAttendeesData(
+    session.user.id,
     search,
     activeFilters,
     activeEventId

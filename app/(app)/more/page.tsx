@@ -1,6 +1,15 @@
+import { auth } from "@/lib/auth";
 import Link from "next/link";
+import TripSwitcher from "@/components/TripSwitcher";
+import { getAccessibleTrips, getActiveTripId } from "@/lib/getActiveTrip";
 
 const sections = [
+  {
+    href: "/trips",
+    label: "Trips",
+    description: "Manage trips and team members",
+    icon: "🌍",
+  },
   {
     href: "/events",
     label: "Events",
@@ -21,10 +30,21 @@ const sections = [
   },
 ];
 
-export default function MorePage() {
+export default async function MorePage() {
+  const session = await auth();
+  const userId = session?.user?.id ?? "";
+
+  const [trips, activeTripId] = await Promise.all([
+    getAccessibleTrips(userId),
+    getActiveTripId(userId),
+  ]);
+
   return (
-    <div className="px-4 pt-6">
+    <div className="px-4 pt-6 pb-24">
       <h1 className="text-xl font-semibold text-gray-900 mb-4">More</h1>
+
+      {/* Trip switcher */}
+      <TripSwitcher trips={trips} currentTripId={activeTripId} />
 
       <div className="bg-white rounded-2xl shadow-sm divide-y divide-gray-100">
         {sections.map((section) => (

@@ -27,8 +27,11 @@ function localNow(timezone: string): Date {
   return new Date(s.replace(" ", "T") + ".000Z");
 }
 
-async function getAllArrivals() {
-  const trip = await db.trip.findFirst({ where: { isActive: true } });
+async function getAllArrivals(userId: string) {
+  const { getActiveTripId } = await import("@/lib/getActiveTrip");
+  const tripId = await getActiveTripId(userId);
+  if (!tripId) return { trip: null, groups: [] };
+  const trip = await db.trip.findUnique({ where: { id: tripId } });
   if (!trip) return { trip: null, groups: [] };
 
   // Get timezone from the earliest event (arrivals happen at trip start)
@@ -76,8 +79,9 @@ async function getAllArrivals() {
 // ─── page ─────────────────────────────────────────────────────────────────────
 
 export default async function ArrivalsPage() {
-  await auth();
-  const { trip, groups } = await getAllArrivals();
+  const session = await auth();
+  if (!session?.user?.id) return null;
+  const { trip, groups } = await getAllArrivals(session.user.id);
 
   return (
     <div className="pb-24">
