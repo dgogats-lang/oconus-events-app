@@ -36,10 +36,10 @@ async function main() {
   // ── Trip ─────────────────────────────────────────────────────────────────
   const trip = await db.trip.create({
     data: {
-      name: "HOH Europe Summits 2026",
-      description: "Annual European defense industry summits — Munich, Warsaw, London",
-      startDate: new Date("2026-06-04"),
-      endDate: new Date("2026-06-14"),
+      name: "HOH East Coast Industry Forums 2026",
+      description: "Annual US defense industry forums — New York, Washington DC, Boston",
+      startDate: new Date("2026-06-08"),
+      endDate: new Date("2026-06-18"),
       isActive: true,
     },
   });
@@ -49,82 +49,82 @@ async function main() {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  const munich = await db.event.create({
-    data: { tripId: trip.id, name: "Munich Summit",  city: "Munich", country: "Germany",        date: today, timezone: "Europe/Berlin" },
+  const newYork = await db.event.create({
+    data: { tripId: trip.id, name: "New York Forum",      city: "New York",      country: "United States", date: today,                                                          timezone: "America/New_York" },
   });
-  const warsaw = await db.event.create({
-    data: { tripId: trip.id, name: "Warsaw Summit",  city: "Warsaw", country: "Poland",         date: new Date(today.getTime() + 4 * 24 * 60 * 60 * 1000), timezone: "Europe/Warsaw" },
+  const dc = await db.event.create({
+    data: { tripId: trip.id, name: "Washington DC Forum", city: "Washington DC", country: "United States", date: new Date(today.getTime() + 4 * 24 * 60 * 60 * 1000),           timezone: "America/New_York" },
   });
-  const london = await db.event.create({
-    data: { tripId: trip.id, name: "London Summit",  city: "London", country: "United Kingdom", date: new Date(today.getTime() + 8 * 24 * 60 * 60 * 1000), timezone: "Europe/London" },
+  const boston = await db.event.create({
+    data: { tripId: trip.id, name: "Boston Forum",        city: "Boston",        country: "United States", date: new Date(today.getTime() + 8 * 24 * 60 * 60 * 1000),           timezone: "America/New_York" },
   });
-  console.log("  ✓ Events (Munich today, Warsaw +4d, London +8d)");
+  console.log("  ✓ Events (New York today, DC +4d, Boston +8d)");
 
-  // ── Attendees (with flat arrival/departure flight fields) ─────────────────
-  // Arrivals = inbound to Munich today; Departures = outbound from London in ~10 days
+  // ── Attendees ─────────────────────────────────────────────────────────────
+  // Arrivals = inbound to JFK today; Departures = outbound from BOS in ~10 days
   const now = new Date();
   const depBase = new Date(today.getTime() + 10 * 24 * 60 * 60 * 1000);
 
   const attendeeData = [
     { firstName: "James",    lastName: "Harrington", email: "j.harrington@lmt.com",     phone: "+1-571-555-0101", companyIdx: 0, hasDodId: true,  travelPackage: true,
-      arrivalAirline: "Lufthansa",       arrivalFlightNumber: "LH 442",   arrivalAirport: "MUC", arrivalScheduledAt: new Date(now.getTime() - 3 * 60 * 60 * 1000),    arrivalActualAt: new Date(now.getTime() - 2.75 * 60 * 60 * 1000), arrivalStatus: "LANDED",
-      departureAirline: "Lufthansa",     departureFlightNumber: "LH 101", departureAirport: "LHR", departureScheduledAt: new Date(depBase.getTime() + 10 * 60 * 60 * 1000), departureStatus: "SCHEDULED" },
+      arrivalAirline: "American",        arrivalFlightNumber: "AA 301",   arrivalAirport: "JFK", arrivalScheduledAt: new Date(now.getTime() - 3 * 60 * 60 * 1000),    arrivalActualAt: new Date(now.getTime() - 2.75 * 60 * 60 * 1000), arrivalStatus: "LANDED",
+      departureAirline: "American",      departureFlightNumber: "AA 488", departureAirport: "BOS", departureScheduledAt: new Date(depBase.getTime() + 10 * 60 * 60 * 1000), departureStatus: "SCHEDULED" },
 
     { firstName: "Sarah",    lastName: "Okafor",     email: "s.okafor@lmt.com",         phone: "+1-571-555-0102", companyIdx: 0, hasDodId: false, travelPackage: true,
-      arrivalAirline: "Lufthansa",       arrivalFlightNumber: "LH 444",   arrivalAirport: "MUC", arrivalScheduledAt: new Date(now.getTime() - 1 * 60 * 60 * 1000),    arrivalActualAt: new Date(now.getTime() - 0.75 * 60 * 60 * 1000), arrivalStatus: "LANDED",
-      departureAirline: "British Airways", departureFlightNumber: "BA 202", departureAirport: "LHR", departureScheduledAt: new Date(depBase.getTime() + 11 * 60 * 60 * 1000), departureStatus: "SCHEDULED" },
+      arrivalAirline: "Delta",           arrivalFlightNumber: "DL 507",   arrivalAirport: "JFK", arrivalScheduledAt: new Date(now.getTime() - 1 * 60 * 60 * 1000),    arrivalActualAt: new Date(now.getTime() - 0.75 * 60 * 60 * 1000), arrivalStatus: "LANDED",
+      departureAirline: "Delta",         departureFlightNumber: "DL 802", departureAirport: "BOS", departureScheduledAt: new Date(depBase.getTime() + 11 * 60 * 60 * 1000), departureStatus: "SCHEDULED" },
 
     { firstName: "Michael",  lastName: "Torres",     email: "m.torres@raytheon.com",    phone: "+1-781-555-0201", companyIdx: 1, hasDodId: true,  travelPackage: true,
-      arrivalAirline: "Delta",           arrivalFlightNumber: "DL 404",   arrivalAirport: "MUC", arrivalScheduledAt: new Date(now.getTime() + 0.5 * 60 * 60 * 1000),  arrivalStatus: "ON_TIME",
-      departureAirline: "Delta",         departureFlightNumber: "DL 501", departureAirport: "LHR", departureScheduledAt: new Date(depBase.getTime() + 9 * 60 * 60 * 1000),  departureStatus: "SCHEDULED" },
+      arrivalAirline: "United",          arrivalFlightNumber: "UA 214",   arrivalAirport: "EWR", arrivalScheduledAt: new Date(now.getTime() + 0.5 * 60 * 60 * 1000),  arrivalStatus: "ON_TIME",
+      departureAirline: "United",        departureFlightNumber: "UA 1543", departureAirport: "BOS", departureScheduledAt: new Date(depBase.getTime() + 9 * 60 * 60 * 1000),  departureStatus: "SCHEDULED" },
 
     { firstName: "Patricia", lastName: "Nguyen",     email: "p.nguyen@raytheon.com",    phone: "+1-781-555-0202", companyIdx: 1, hasDodId: false, travelPackage: false,
-      arrivalAirline: "United",          arrivalFlightNumber: "UA 986",   arrivalAirport: "MUC", arrivalScheduledAt: new Date(now.getTime() + 1 * 60 * 60 * 1000),   arrivalStatus: "DELAYED",
-      departureAirline: "United",        departureFlightNumber: "UA 987", departureAirport: "LHR", departureScheduledAt: new Date(depBase.getTime() + 14 * 60 * 60 * 1000), departureStatus: "SCHEDULED" },
+      arrivalAirline: "JetBlue",         arrivalFlightNumber: "B6 915",   arrivalAirport: "JFK", arrivalScheduledAt: new Date(now.getTime() + 1 * 60 * 60 * 1000),   arrivalStatus: "DELAYED",
+      departureAirline: "JetBlue",       departureFlightNumber: "B6 916", departureAirport: "BOS", departureScheduledAt: new Date(depBase.getTime() + 14 * 60 * 60 * 1000), departureStatus: "SCHEDULED" },
 
     { firstName: "Robert",   lastName: "Chen",       email: "r.chen@boeing.com",        phone: "+1-703-555-0301", companyIdx: 2, hasDodId: true,  travelPackage: true,
-      arrivalAirline: "American",        arrivalFlightNumber: "AA 102",   arrivalAirport: "MUC", arrivalScheduledAt: new Date(now.getTime() + 2 * 60 * 60 * 1000),   arrivalStatus: "SCHEDULED",
-      departureAirline: "American",      departureFlightNumber: "AA 103", departureAirport: "LHR", departureScheduledAt: new Date(depBase.getTime() + 10 * 60 * 60 * 1000), departureStatus: "SCHEDULED" },
+      arrivalAirline: "American",        arrivalFlightNumber: "AA 305",   arrivalAirport: "JFK", arrivalScheduledAt: new Date(now.getTime() + 2 * 60 * 60 * 1000),   arrivalStatus: "SCHEDULED",
+      departureAirline: "American",      departureFlightNumber: "AA 490", departureAirport: "BOS", departureScheduledAt: new Date(depBase.getTime() + 10 * 60 * 60 * 1000), departureStatus: "SCHEDULED" },
 
     { firstName: "Linda",    lastName: "Vasquez",    email: "l.vasquez@boeing.com",     phone: "+1-703-555-0302", companyIdx: 2, hasDodId: false, travelPackage: true,
-      arrivalAirline: "British Airways", arrivalFlightNumber: "BA 914",   arrivalAirport: "MUC", arrivalScheduledAt: new Date(now.getTime() + 2 * 60 * 60 * 1000),   arrivalStatus: "SCHEDULED",
-      departureAirline: "British Airways", departureFlightNumber: "BA 915", departureAirport: "LHR", departureScheduledAt: new Date(depBase.getTime() + 15 * 60 * 60 * 1000), departureStatus: "SCHEDULED" },
+      arrivalAirline: "Southwest",       arrivalFlightNumber: "WN 3781",  arrivalAirport: "EWR", arrivalScheduledAt: new Date(now.getTime() + 2 * 60 * 60 * 1000),   arrivalStatus: "SCHEDULED",
+      departureAirline: "Southwest",     departureFlightNumber: "WN 3782", departureAirport: "BOS", departureScheduledAt: new Date(depBase.getTime() + 15 * 60 * 60 * 1000), departureStatus: "SCHEDULED" },
 
     { firstName: "William",  lastName: "Park",       email: "w.park@gd.com",            phone: "+1-703-555-0401", companyIdx: 3, hasDodId: true,  travelPackage: false,
-      arrivalAirline: "Emirates",        arrivalFlightNumber: "EK 051",   arrivalAirport: "MUC", arrivalScheduledAt: new Date(now.getTime() + 3 * 60 * 60 * 1000),   arrivalStatus: "SCHEDULED",
-      departureAirline: "Emirates",      departureFlightNumber: "EK 052", departureAirport: "LHR", departureScheduledAt: new Date(depBase.getTime() + 13 * 60 * 60 * 1000), departureStatus: "SCHEDULED" },
+      arrivalAirline: "Delta",           arrivalFlightNumber: "DL 511",   arrivalAirport: "JFK", arrivalScheduledAt: new Date(now.getTime() + 3 * 60 * 60 * 1000),   arrivalStatus: "SCHEDULED",
+      departureAirline: "Delta",         departureFlightNumber: "DL 806", departureAirport: "BOS", departureScheduledAt: new Date(depBase.getTime() + 13 * 60 * 60 * 1000), departureStatus: "SCHEDULED" },
 
     { firstName: "Barbara",  lastName: "Kowalski",   email: "b.kowalski@gd.com",        phone: "+1-703-555-0402", companyIdx: 3, hasDodId: false, travelPackage: true,
-      arrivalAirline: "KLM",             arrivalFlightNumber: "KL 1874",  arrivalAirport: "MUC", arrivalScheduledAt: new Date(now.getTime() + 4 * 60 * 60 * 1000),   arrivalStatus: "SCHEDULED",
-      departureAirline: "KLM",           departureFlightNumber: "KL 1875", departureAirport: "LHR", departureScheduledAt: new Date(depBase.getTime() + 10 * 60 * 60 * 1000), departureStatus: "SCHEDULED" },
+      arrivalAirline: "United",          arrivalFlightNumber: "UA 220",   arrivalAirport: "EWR", arrivalScheduledAt: new Date(now.getTime() + 4 * 60 * 60 * 1000),   arrivalStatus: "SCHEDULED",
+      departureAirline: "United",        departureFlightNumber: "UA 1545", departureAirport: "BOS", departureScheduledAt: new Date(depBase.getTime() + 10 * 60 * 60 * 1000), departureStatus: "SCHEDULED" },
 
     { firstName: "David",    lastName: "Osei",       email: "d.osei@northrop.com",      phone: "+1-703-555-0501", companyIdx: 4, hasDodId: true,  travelPackage: true,
-      arrivalAirline: "Air France",      arrivalFlightNumber: "AF 2240",  arrivalAirport: "MUC", arrivalScheduledAt: new Date(now.getTime() + 5 * 60 * 60 * 1000),   arrivalStatus: "SCHEDULED",
-      departureAirline: "Air France",    departureFlightNumber: "AF 2241", departureAirport: "LHR", departureScheduledAt: new Date(depBase.getTime() + 11 * 60 * 60 * 1000), departureStatus: "SCHEDULED" },
+      arrivalAirline: "American",        arrivalFlightNumber: "AA 309",   arrivalAirport: "JFK", arrivalScheduledAt: new Date(now.getTime() + 5 * 60 * 60 * 1000),   arrivalStatus: "SCHEDULED",
+      departureAirline: "American",      departureFlightNumber: "AA 492", departureAirport: "BOS", departureScheduledAt: new Date(depBase.getTime() + 11 * 60 * 60 * 1000), departureStatus: "SCHEDULED" },
 
     { firstName: "Jennifer", lastName: "Walsh",      email: "j.walsh@northrop.com",     phone: "+1-703-555-0502", companyIdx: 4, hasDodId: false, travelPackage: false,
-      arrivalAirline: "Iberia",          arrivalFlightNumber: "IB 3782",  arrivalAirport: "MUC", arrivalScheduledAt: new Date(now.getTime() + 5 * 60 * 60 * 1000),   arrivalStatus: "SCHEDULED",
-      departureAirline: "Iberia",        departureFlightNumber: "IB 3783", departureAirport: "LHR", departureScheduledAt: new Date(depBase.getTime() + 12 * 60 * 60 * 1000), departureStatus: "SCHEDULED" },
+      arrivalAirline: "JetBlue",         arrivalFlightNumber: "B6 921",   arrivalAirport: "JFK", arrivalScheduledAt: new Date(now.getTime() + 5 * 60 * 60 * 1000),   arrivalStatus: "SCHEDULED",
+      departureAirline: "JetBlue",       departureFlightNumber: "B6 922", departureAirport: "BOS", departureScheduledAt: new Date(depBase.getTime() + 12 * 60 * 60 * 1000), departureStatus: "SCHEDULED" },
 
     { firstName: "Thomas",   lastName: "Reyes",      email: "t.reyes@l3harris.com",     phone: "+1-321-555-0601", companyIdx: 5, hasDodId: true,  travelPackage: true,
-      arrivalAirline: "Lufthansa",       arrivalFlightNumber: "LH 450",   arrivalAirport: "MUC", arrivalScheduledAt: new Date(now.getTime() + 6 * 60 * 60 * 1000),   arrivalStatus: "SCHEDULED",
-      departureAirline: "Lufthansa",     departureFlightNumber: "LH 102", departureAirport: "LHR", departureScheduledAt: new Date(depBase.getTime() + 10 * 60 * 60 * 1000), departureStatus: "SCHEDULED" },
+      arrivalAirline: "Delta",           arrivalFlightNumber: "DL 515",   arrivalAirport: "JFK", arrivalScheduledAt: new Date(now.getTime() + 6 * 60 * 60 * 1000),   arrivalStatus: "SCHEDULED",
+      departureAirline: "Delta",         departureFlightNumber: "DL 810", departureAirport: "BOS", departureScheduledAt: new Date(depBase.getTime() + 10 * 60 * 60 * 1000), departureStatus: "SCHEDULED" },
 
     { firstName: "Margaret", lastName: "Johansson",  email: "m.johansson@l3harris.com", phone: "+1-321-555-0602", companyIdx: 5, hasDodId: false, travelPackage: true,
-      arrivalAirline: "Swiss",           arrivalFlightNumber: "LX 1922",  arrivalAirport: "MUC", arrivalScheduledAt: new Date(now.getTime() + 7 * 60 * 60 * 1000),   arrivalStatus: "SCHEDULED",
-      departureAirline: "Swiss",         departureFlightNumber: "LX 1923", departureAirport: "LHR", departureScheduledAt: new Date(depBase.getTime() + 14 * 60 * 60 * 1000), departureStatus: "SCHEDULED" },
+      arrivalAirline: "United",          arrivalFlightNumber: "UA 228",   arrivalAirport: "EWR", arrivalScheduledAt: new Date(now.getTime() + 7 * 60 * 60 * 1000),   arrivalStatus: "SCHEDULED",
+      departureAirline: "United",        departureFlightNumber: "UA 1549", departureAirport: "BOS", departureScheduledAt: new Date(depBase.getTime() + 14 * 60 * 60 * 1000), departureStatus: "SCHEDULED" },
 
     { firstName: "Charles",  lastName: "Abrams",     email: "c.abrams@lmt.com",         phone: "+1-571-555-0103", companyIdx: 0, hasDodId: true,  travelPackage: false,
-      arrivalAirline: "Lufthansa",       arrivalFlightNumber: "LH 452",   arrivalAirport: "MUC", arrivalScheduledAt: new Date(now.getTime() + 8 * 60 * 60 * 1000),   arrivalStatus: "SCHEDULED",
-      departureAirline: "Lufthansa",     departureFlightNumber: "LH 103", departureAirport: "LHR", departureScheduledAt: new Date(depBase.getTime() + 9 * 60 * 60 * 1000),  departureStatus: "SCHEDULED" },
+      arrivalAirline: "American",        arrivalFlightNumber: "AA 313",   arrivalAirport: "JFK", arrivalScheduledAt: new Date(now.getTime() + 8 * 60 * 60 * 1000),   arrivalStatus: "SCHEDULED",
+      departureAirline: "American",      departureFlightNumber: "AA 494", departureAirport: "BOS", departureScheduledAt: new Date(depBase.getTime() + 9 * 60 * 60 * 1000),  departureStatus: "SCHEDULED" },
 
     { firstName: "Susan",    lastName: "Brennan",    email: "s.brennan@raytheon.com",   phone: "+1-781-555-0203", companyIdx: 1, hasDodId: false, travelPackage: true,
-      arrivalAirline: "Delta",           arrivalFlightNumber: "DL 408",   arrivalAirport: "MUC", arrivalScheduledAt: new Date(now.getTime() + 9 * 60 * 60 * 1000),   arrivalStatus: "SCHEDULED",
-      departureAirline: "Delta",         departureFlightNumber: "DL 502", departureAirport: "LHR", departureScheduledAt: new Date(depBase.getTime() + 11 * 60 * 60 * 1000), departureStatus: "SCHEDULED" },
+      arrivalAirline: "Delta",           arrivalFlightNumber: "DL 519",   arrivalAirport: "JFK", arrivalScheduledAt: new Date(now.getTime() + 9 * 60 * 60 * 1000),   arrivalStatus: "SCHEDULED",
+      departureAirline: "Delta",         departureFlightNumber: "DL 814", departureAirport: "BOS", departureScheduledAt: new Date(depBase.getTime() + 11 * 60 * 60 * 1000), departureStatus: "SCHEDULED" },
 
     { firstName: "Kevin",    lastName: "Matsuda",    email: "k.matsuda@boeing.com",     phone: "+1-703-555-0303", companyIdx: 2, hasDodId: true,  travelPackage: true,
-      arrivalAirline: "United",          arrivalFlightNumber: "UA 990",   arrivalAirport: "MUC", arrivalScheduledAt: new Date(now.getTime() + 10 * 60 * 60 * 1000),  arrivalStatus: "SCHEDULED",
-      departureAirline: "United",        departureFlightNumber: "UA 991", departureAirport: "LHR", departureScheduledAt: new Date(depBase.getTime() + 13 * 60 * 60 * 1000), departureStatus: "SCHEDULED" },
+      arrivalAirline: "United",          arrivalFlightNumber: "UA 232",   arrivalAirport: "EWR", arrivalScheduledAt: new Date(now.getTime() + 10 * 60 * 60 * 1000),  arrivalStatus: "SCHEDULED",
+      departureAirline: "United",        departureFlightNumber: "UA 1553", departureAirport: "BOS", departureScheduledAt: new Date(depBase.getTime() + 13 * 60 * 60 * 1000), departureStatus: "SCHEDULED" },
   ];
 
   const attendees = await Promise.all(
@@ -135,35 +135,35 @@ async function main() {
   console.log(`  ✓ ${attendees.length} Attendees (with arrival + departure flights)`);
 
   // ── Event Registrations ──────────────────────────────────────────────────
-  // All 15 attend Munich; 12 attend Warsaw; 10 attend London
-  const warsawAttendees = attendees.slice(0, 12);
-  const londonAttendees = attendees.slice(0, 10);
+  // All 15 attend New York; 12 attend DC; 10 attend Boston
+  const dcAttendees     = attendees.slice(0, 12);
+  const bostonAttendees = attendees.slice(0, 10);
 
   await Promise.all([
     ...attendees.map((a) =>
-      db.eventRegistration.create({ data: { attendeeId: a.id, eventId: munich.id } })
+      db.eventRegistration.create({ data: { attendeeId: a.id, eventId: newYork.id } })
     ),
-    ...warsawAttendees.map((a) =>
-      db.eventRegistration.create({ data: { attendeeId: a.id, eventId: warsaw.id } })
+    ...dcAttendees.map((a) =>
+      db.eventRegistration.create({ data: { attendeeId: a.id, eventId: dc.id } })
     ),
-    ...londonAttendees.map((a) =>
-      db.eventRegistration.create({ data: { attendeeId: a.id, eventId: london.id } })
+    ...bostonAttendees.map((a) =>
+      db.eventRegistration.create({ data: { attendeeId: a.id, eventId: boston.id } })
     ),
   ]);
-  console.log("  ✓ Event registrations (Munich: 15, Warsaw: 12, London: 10)");
+  console.log("  ✓ Event registrations (New York: 15, DC: 12, Boston: 10)");
 
   // ── Hotels ───────────────────────────────────────────────────────────────
-  const hotelBayerischer = await db.hotel.create({
-    data: { eventId: munich.id, name: "Hotel Bayerischer Hof",  address: "Promenadeplatz 2-6, 80333 Munich",                  phone: "+49 89 21200" },
+  const hotelPierre = await db.hotel.create({
+    data: { eventId: newYork.id, tripId: trip.id, name: "The Pierre, A Taj Hotel",    address: "2 East 61st Street, New York, NY 10065",             phone: "+1 212-838-8000" },
   });
-  const hotelMarriott = await db.hotel.create({
-    data: { eventId: munich.id, name: "Munich Marriott Hotel",  address: "Berliner Strasse 93, 80805 Munich",                  phone: "+49 89 36002000" },
+  const hotelMarriottNY = await db.hotel.create({
+    data: { eventId: newYork.id, tripId: trip.id, name: "New York Marriott Marquis",  address: "1535 Broadway, New York, NY 10036",                   phone: "+1 212-398-1900" },
   });
-  const hotelBristol = await db.hotel.create({
-    data: { eventId: warsaw.id, name: "Hotel Bristol Warsaw",   address: "Krakowskie Przedmiescie 42/44, 00-325 Warsaw",       phone: "+48 22 551 1000" },
+  const hotelHayAdams = await db.hotel.create({
+    data: { eventId: dc.id,      tripId: trip.id, name: "The Hay-Adams",              address: "800 16th Street NW, Washington, DC 20006",            phone: "+1 202-638-6600" },
   });
   await db.hotel.create({
-    data: { eventId: london.id, name: "The Savoy",              address: "Strand, London WC2R 0EZ",                           phone: "+44 20 7836 4343" },
+    data: { eventId: boston.id,  tripId: trip.id, name: "Boston Marriott Copley Place", address: "110 Huntington Ave, Boston, MA 02116",             phone: "+1 617-236-5800" },
   });
   console.log("  ✓ Hotels");
 
@@ -171,17 +171,17 @@ async function main() {
   await Promise.all([
     ...attendees.slice(0, 9).map((a, i) =>
       db.hotelManifestEntry.create({
-        data: { attendeeId: a.id, hotelId: hotelBayerischer.id, roomNumber: `${201 + i}`, checkIn: today, checkOut: new Date(today.getTime() + 4 * 24 * 60 * 60 * 1000) },
+        data: { attendeeId: a.id, hotelId: hotelPierre.id, roomNumber: `${201 + i}`, checkIn: today, checkOut: new Date(today.getTime() + 4 * 24 * 60 * 60 * 1000) },
       })
     ),
     ...attendees.slice(9).map((a, i) =>
       db.hotelManifestEntry.create({
-        data: { attendeeId: a.id, hotelId: hotelMarriott.id, roomNumber: `${301 + i}`, checkIn: today, checkOut: new Date(today.getTime() + 4 * 24 * 60 * 60 * 1000) },
+        data: { attendeeId: a.id, hotelId: hotelMarriottNY.id, roomNumber: `${301 + i}`, checkIn: today, checkOut: new Date(today.getTime() + 4 * 24 * 60 * 60 * 1000) },
       })
     ),
-    ...warsawAttendees.map((a, i) =>
+    ...dcAttendees.map((a, i) =>
       db.hotelManifestEntry.create({
-        data: { attendeeId: a.id, hotelId: hotelBristol.id, roomNumber: `${401 + i}`, checkIn: new Date(today.getTime() + 4 * 24 * 60 * 60 * 1000), checkOut: new Date(today.getTime() + 8 * 24 * 60 * 60 * 1000) },
+        data: { attendeeId: a.id, hotelId: hotelHayAdams.id, roomNumber: `${401 + i}`, checkIn: new Date(today.getTime() + 4 * 24 * 60 * 60 * 1000), checkOut: new Date(today.getTime() + 8 * 24 * 60 * 60 * 1000) },
       })
     ),
   ]);
@@ -193,14 +193,44 @@ async function main() {
   const inEightHours = new Date(now.getTime() + 8 * 60 * 60 * 1000);
 
   const bus1 = await db.movement.create({
-    data: { tripId: trip.id, eventId: munich.id, timezone: "Europe/Berlin", name: "Bus 1 — Airport to Hotels", mode: "BUS", departureLocation: "Munich Airport (MUC) — Terminal 2", arrivalLocation: "Hotel Bayerischer Hof", departureTime: inTwoHours, arrivalTime: new Date(inTwoHours.getTime() + 45 * 60 * 1000), notes: "Meet at arrivals hall exit, look for HOH sign" },
+    data: {
+      tripId: trip.id, eventId: newYork.id, timezone: "America/New_York",
+      name: "Bus 1 — JFK to Hotels",
+      mode: "BUS",
+      departureLocation: "JFK Airport — Terminal 8 Arrivals",
+      arrivalLocation: "The Pierre, 2 East 61st Street",
+      departureTime: inTwoHours,
+      arrivalTime: new Date(inTwoHours.getTime() + 60 * 60 * 1000),
+      notes: "Meet at arrivals curb, look for HOH sign. Allow extra time for tunnel traffic.",
+    },
   });
+
   const bus2 = await db.movement.create({
-    data: { tripId: trip.id, eventId: munich.id, timezone: "Europe/Berlin", name: "Bus 2 — Hotels to Venue", mode: "BUS", departureLocation: "Hotel Bayerischer Hof", arrivalLocation: "Munich Conference Center (MCC)", departureTime: inFiveHours, arrivalTime: new Date(inFiveHours.getTime() + 20 * 60 * 1000) },
+    data: {
+      tripId: trip.id, eventId: newYork.id, timezone: "America/New_York",
+      name: "Bus 2 — Hotels to Venue",
+      mode: "BUS",
+      departureLocation: "The Pierre, 2 East 61st Street",
+      arrivalLocation: "Intrepid Sea, Air & Space Museum",
+      departureTime: inFiveHours,
+      arrivalTime: new Date(inFiveHours.getTime() + 30 * 60 * 1000),
+      meetTime: new Date(inFiveHours.getTime() - 15 * 60 * 1000),
+      meetLocation: "Hotel lobby",
+    },
   });
-  // Cross-timezone flight: departure timezone = Munich (Europe/Berlin), not Warsaw
+
+  // NYC → DC: departure timezone = America/New_York (same city, but explicit)
   const flight1 = await db.movement.create({
-    data: { tripId: trip.id, eventId: munich.id, timezone: "Europe/Berlin", name: "Group Flight — Munich to Warsaw", mode: "FLIGHT", departureLocation: "Munich Airport (MUC)", arrivalLocation: "Warsaw Chopin Airport (WAW)", departureTime: inEightHours, arrivalTime: new Date(inEightHours.getTime() + 100 * 60 * 1000), notes: "LH 1682 — check in at Terminal 2, Lufthansa counters by 06:30" },
+    data: {
+      tripId: trip.id, eventId: newYork.id, timezone: "America/New_York",
+      name: "Group Flight — New York to Washington DC",
+      mode: "FLIGHT",
+      departureLocation: "LaGuardia Airport (LGA) — Terminal B",
+      arrivalLocation: "Reagan National Airport (DCA)",
+      departureTime: inEightHours,
+      arrivalTime: new Date(inEightHours.getTime() + 80 * 60 * 1000),
+      notes: "AA 1225 — check in at American counters by T-90 min. Shuttle from hotels departs 90 min prior.",
+    },
   });
   console.log("  ✓ Movements");
 
@@ -222,9 +252,9 @@ async function main() {
 
   console.log("\n✅ Seed complete!");
   console.log(`   Trip:       ${trip.name}`);
-  console.log(`   Events:     Munich (today, 15), Warsaw (+4d, 12), London (+8d, 10)`);
+  console.log(`   Events:     New York (today, 15), DC (+4d, 12), Boston (+8d, 10)`);
   console.log(`   Attendees:  ${attendees.length} with arrival + departure flights`);
-  console.log(`   Hotels:     Bayerischer Hof (9), Marriott (6), Bristol (12), Savoy (London — no assignments yet)`);
+  console.log(`   Hotels:     The Pierre (9), Marriott Marquis (6), Hay-Adams (12), Boston Marriott (no assignments yet)`);
   console.log(`   Next move:  Bus 1 departs in ~2 hours`);
 }
 

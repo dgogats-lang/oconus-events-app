@@ -2,6 +2,12 @@ import Link from "next/link";
 
 const sections = [
   {
+    href: "/events",
+    label: "Events",
+    description: "Summits and stops for this trip",
+    icon: "📍",
+  },
+  {
     href: "/hotels",
     label: "Hotels",
     description: "Hotel assignments and rooming lists",
