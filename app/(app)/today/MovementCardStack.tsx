@@ -35,7 +35,7 @@ function fmtTime(iso: string | null | undefined) {
 }
 
 function fmtShortDate(iso: string) {
-  return new Date(iso).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+  return new Date(iso).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', timeZone: 'UTC' });
 }
 
 function fmtDuration(dep: string, arr: string | null | undefined) {

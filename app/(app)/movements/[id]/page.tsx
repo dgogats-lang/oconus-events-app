@@ -20,7 +20,7 @@ const MODE_LABEL: Record<MovementMode, string> = {
 
 function fmtTime(d: Date | null | undefined) {
   if (!d) return "—";
-  return d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+  return d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZone: "UTC" });
 }
 
 function fmtDayTime(d: Date) {
@@ -30,6 +30,7 @@ function fmtDayTime(d: Date) {
     day: "numeric",
     hour: "numeric",
     minute: "2-digit",
+    timeZone: "UTC",
   });
 }
 
