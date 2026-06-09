@@ -29,7 +29,13 @@ function fmtDate(d: Date) {
 
 export default async function EventsPage() {
   const session = await auth();
-  if (!session) return null;
+  if (!session?.user?.email) return null;
+
+  const dbUser = await db.user.findUnique({
+    where: { email: session.user.email },
+    select: { role: true },
+  });
+  const isAdmin = dbUser?.role === "ADMIN";
 
   const trip = await getEventsData();
   if (!trip) {
@@ -47,6 +53,16 @@ export default async function EventsPage() {
         eyebrow={trip.name.toUpperCase()}
         backHref="/more"
         backLabel="More"
+        action={
+          isAdmin ? (
+            <Link
+              href="/events/new"
+              className="inline-flex items-center gap-1 text-sm font-bold text-white bg-brand-navy rounded-full px-4 py-1.5"
+            >
+              + Add
+            </Link>
+          ) : undefined
+        }
       />
 
       <div className="bg-white rounded-2xl shadow-sm divide-y divide-gray-100">

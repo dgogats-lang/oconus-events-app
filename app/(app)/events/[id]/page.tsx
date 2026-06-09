@@ -69,7 +69,13 @@ async function getEventDetail(id: string) {
 
 export default async function EventDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const session = await auth();
-  if (!session) return null;
+  if (!session?.user?.email) return null;
+
+  const dbUser = await db.user.findUnique({
+    where: { email: session.user.email },
+    select: { role: true },
+  });
+  const isAdmin = dbUser?.role === "ADMIN";
 
   const { id } = await params;
   const event = await getEventDetail(id);
@@ -77,7 +83,20 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
 
   return (
     <div className="pb-24">
-      <DetailNavBar backHref="/events" backLabel="Events" />
+      <DetailNavBar
+        backHref="/events"
+        backLabel="Events"
+        action={
+          isAdmin ? (
+            <Link
+              href={`/events/${id}/edit`}
+              className="inline-flex items-center gap-1 text-sm font-bold text-brand-navy bg-chip rounded-full px-3 py-1.5"
+            >
+              Edit
+            </Link>
+          ) : undefined
+        }
+      />
 
       <div className="px-4">
         <RecordHeader
