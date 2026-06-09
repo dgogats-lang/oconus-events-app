@@ -67,11 +67,12 @@ async function getEventDetail(id: string) {
   });
 }
 
-export default async function EventDetailPage({ params }: { params: { id: string } }) {
+export default async function EventDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const session = await auth();
   if (!session) return null;
 
-  const event = await getEventDetail(params.id);
+  const { id } = await params;
+  const event = await getEventDetail(id);
   if (!event) notFound();
 
   return (
