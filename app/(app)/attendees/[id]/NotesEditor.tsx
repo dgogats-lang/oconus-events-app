@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { updateAttendeeNotes } from "@/actions/attendee";
+import Pill from "@/components/Pill";
 
 export default function NotesEditor({
   attendeeId,
@@ -48,13 +49,9 @@ export default function NotesEditor({
           {saved && <span className="text-green-600">Saved</span>}
           {error && <span className="text-red-500">{error}</span>}
         </span>
-        <button
-          onClick={handleSave}
-          disabled={!isDirty || isPending}
-          className="text-xs font-semibold px-4 py-1.5 rounded-full bg-[#0C2340] text-white disabled:opacity-40 transition-opacity"
-        >
+        <Pill size="sm" onClick={handleSave} disabled={!isDirty || isPending}>
           {isPending ? "Saving…" : "Save"}
-        </button>
+        </Pill>
       </div>
     </div>
   );

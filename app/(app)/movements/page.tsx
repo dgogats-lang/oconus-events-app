@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import Link from "next/link";
 import { MovementMode } from "@prisma/client";
 import PageHeader from "@/components/PageHeader";
+import Pill from "@/components/Pill";
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
@@ -108,16 +109,12 @@ export default async function MovementsPage() {
           eyebrow={trip.name}
           title="Movements"
           action={
-            <Link
-              href="/movements/new"
-              className="flex items-center gap-1.5 text-sm font-bold text-white bg-[#0C2340] rounded-full px-4 py-1.5"
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <Pill variant="secondary" icon href="/movements/new">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <line x1="12" y1="5" x2="12" y2="19" />
                 <line x1="5" y1="12" x2="19" y2="12" />
               </svg>
-              Add
-            </Link>
+            </Pill>
           }
         />
       </div>

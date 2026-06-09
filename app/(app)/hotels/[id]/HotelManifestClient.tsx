@@ -2,6 +2,7 @@
 
 import { useState, useTransition, useRef } from "react";
 import Link from "next/link";
+import Pill from "@/components/Pill";
 import { assignToHotel, removeFromHotel, updateRoomNumber } from "@/actions/hotelManifest";
 
 // ─── types ────────────────────────────────────────────────────────────────────
@@ -410,15 +411,11 @@ export default function HotelManifestClient({
             {visibleEntries.length === 1 ? "guest" : "guests"}
           </span>
         </div>
-        <button
-          onClick={() => setShowAddSheet(true)}
-          className="ml-auto flex items-center gap-1.5 text-sm font-medium text-[#0C2340] bg-[#E8EDF2] rounded-full px-3 py-1.5 active:opacity-70"
-        >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+        <Pill variant="secondary" icon className="ml-auto" onClick={() => setShowAddSheet(true)}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
           </svg>
-          Add
-        </button>
+        </Pill>
       </div>
 
       <div className="px-4">

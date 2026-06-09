@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import Link from "next/link";
 import PageHeader from "@/components/PageHeader";
+import Pill from "@/components/Pill";
 
 async function getEventsData(userId: string) {
   const { getActiveTripId } = await import("@/lib/getActiveTrip");
@@ -58,12 +59,12 @@ export default async function EventsPage() {
         backLabel="More"
         action={
           isAdmin ? (
-            <Link
-              href="/events/new"
-              className="inline-flex items-center gap-1 text-sm font-bold text-white bg-brand-navy rounded-full px-4 py-1.5"
-            >
-              + Add
-            </Link>
+            <Pill variant="secondary" icon href="/events/new">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19" />
+                <line x1="5" y1="12" x2="19" y2="12" />
+              </svg>
+            </Pill>
           ) : undefined
         }
       />
