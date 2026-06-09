@@ -49,7 +49,11 @@ export default function TripForm({ tripId, initialValues, backHref }: Props) {
       return;
     }
 
-    router.push(isEdit ? `/trips/${tripId}` : `/trips/${result.id}`);
+    if (isEdit) {
+      router.push(`/trips/${tripId}`);
+    } else if ("id" in result) {
+      router.push(`/trips/${result.id}`);
+    }
   }
 
   return (
