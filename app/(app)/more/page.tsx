@@ -1,4 +1,4 @@
-import { auth } from "@/lib/auth";
+import { auth, signOut } from "@/lib/auth";
 import Link from "next/link";
 import TripSwitcher from "@/components/TripSwitcher";
 import { getAccessibleTrips, getActiveTripId } from "@/lib/getActiveTrip";
@@ -64,6 +64,27 @@ export default async function MorePage() {
           </Link>
         ))}
       </div>
+
+      {/* Sign out */}
+      <form
+        action={async () => {
+          "use server";
+          await signOut({ redirectTo: "/login" });
+        }}
+        className="mt-4"
+      >
+        <button
+          type="submit"
+          className="w-full flex items-center gap-4 px-4 py-4 bg-white rounded-2xl shadow-sm active:bg-gray-50 transition-colors text-left"
+        >
+          <span className="text-2xl w-8 text-center">🚪</span>
+          <p className="text-sm font-medium text-red-500">Sign Out</p>
+        </button>
+      </form>
+
+      {session?.user?.email && (
+        <p className="text-center text-xs text-gray-300 mt-3">{session.user.email}</p>
+      )}
     </div>
   );
 }
