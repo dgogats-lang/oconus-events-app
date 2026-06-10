@@ -11,7 +11,7 @@ export default async function AppLayout({
   if (!session) redirect("/login");
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-surface-page">
       <main className="tab-content">{children}</main>
       <TabBar />
     </div>

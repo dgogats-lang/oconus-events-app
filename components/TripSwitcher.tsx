@@ -37,26 +37,32 @@ export default function TripSwitcher({ trips, currentTripId }: Props) {
       <button
         onClick={() => setOpen((v) => !v)}
         disabled={pending}
-        className="w-full flex items-center justify-between gap-3 bg-white rounded-2xl shadow-sm px-4 py-3.5 active:bg-gray-50 transition-colors"
+        className="w-full flex items-center justify-between gap-3 bg-surface-card rounded-card border border-line px-4 py-3.5 active:bg-surface-raised transition-colors"
       >
         <div className="flex items-center gap-3 min-w-0">
-          <span className="text-xl">🌍</span>
+          <div className="w-9 h-9 rounded-panel bg-surface-chip flex items-center justify-center flex-shrink-0">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0C2340" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="2" y1="12" x2="22" y2="12"/>
+              <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+            </svg>
+          </div>
           <div className="min-w-0 text-left">
-            <p className="text-[10px] font-bold text-gray-400 tracking-widest uppercase">
+            <p className="text-[10px] font-extrabold text-ink-muted tracking-widest uppercase">
               Active Trip
             </p>
-            <p className="text-sm font-semibold text-gray-900 truncate">
+            <p className="text-sm font-semibold text-ink truncate">
               {current?.name ?? "No trip selected"}
             </p>
           </div>
         </div>
         <svg
-          width="16"
-          height="16"
+          width="14"
+          height="14"
           viewBox="0 0 24 24"
           fill="none"
-          stroke="#D1D5DB"
-          strokeWidth="2"
+          stroke="#CBD5E1"
+          strokeWidth="2.5"
           strokeLinecap="round"
           strokeLinejoin="round"
           className={`flex-shrink-0 transition-transform ${open ? "rotate-90" : ""}`}
@@ -68,19 +74,15 @@ export default function TripSwitcher({ trips, currentTripId }: Props) {
       {/* Dropdown */}
       {open && (
         <>
-          {/* Backdrop */}
-          <div
-            className="fixed inset-0 z-10"
-            onClick={() => setOpen(false)}
-          />
-          <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-2xl shadow-lg z-20 overflow-hidden">
+          <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
+          <div className="absolute top-full left-0 right-0 mt-1 bg-surface-card rounded-card border border-line z-20 overflow-hidden">
             {trips.map((trip) => (
               <button
                 key={trip.id}
                 onClick={() => handleSelect(trip.id)}
-                className="w-full flex items-center justify-between px-4 py-3.5 text-left active:bg-gray-50 transition-colors border-b border-gray-100 last:border-0"
+                className="w-full flex items-center justify-between px-4 py-3.5 text-left active:bg-surface-raised transition-colors border-b border-line-subtle last:border-0"
               >
-                <span className="text-sm font-medium text-gray-900 truncate pr-2">
+                <span className="text-sm font-medium text-ink truncate pr-2">
                   {trip.name}
                 </span>
                 {trip.id === currentTripId && (
